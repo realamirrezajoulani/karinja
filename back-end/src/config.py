@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from routers import main
 
@@ -22,5 +24,29 @@ app = FastAPI(title="karinja API",
               },
               default_response_class=ORJSONResponse)
 
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=4)
+
+
+origins = [
+    "http://localhost:3000",
+    "https://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["GET", "POST", "OPTIONS", "HEAD", "PATCH", "DELETE"],
+    allow_headers=["Content-Type", "accept", "Authorization", "Authorization-Refresh"],
+)
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Expect-CT"] = "max-age=86400, enforce"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
 
 app.include_router(main.router, tags=["main"])

@@ -1,0 +1,28 @@
+from uuid import UUID
+from sqlmodel import Field, SQLModel
+
+from utilities.enumerables import JobSeekerCertificateVerificationStatus, JobSeekerProficiencyLevel
+
+
+class JobSeekerSkillBase(SQLModel):
+    # min_length=5, max_length=30
+    title: str = Field(...)
+
+    # min_length=5, max_length=30
+    proficiency_level: JobSeekerProficiencyLevel = Field(...)
+
+    has_certificate: bool = Field(...)
+
+    # min_length=5, max_length=30
+    certificate_issuing_organization: str | None = Field(
+        default=None
+    )
+
+    # min_length=5, max_length=30
+    certificate_code: str | None = Field(default=None)
+
+    certificate_verification_status: JobSeekerCertificateVerificationStatus | None = Field(
+        default=None
+    )
+
+    job_seeker_resume_id: UUID = Field(foreign_key="jobseekerresume.id", ondelete="CASCADE")

@@ -5,9 +5,11 @@ from utilities.enumerables import EmploymentStatusJobSeekerResume
 
 
 class JobSeekerResumeBase(SQLModel):
-    job_title: str = Field(min_length=5, max_length=30)
+    # min_length=5, max_length=30
+    job_title: str = Field(...)
 
-    professional_summary: str | None = Field(default=None, max_length=250)
+    # max_length=250
+    professional_summary: str | None = Field(default=None)
 
     employment_status: EmploymentStatusJobSeekerResume = Field(...)
 

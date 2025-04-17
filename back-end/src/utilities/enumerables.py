@@ -97,3 +97,56 @@ class JobSeekerEducationDegree(str, Enum):
     MASTERS_DEGREE = "کارشناسی ارشد"
     DOCTORATE_DEGREE = "دکتری"
     OTHER = "سایر"
+
+
+class EmployerCompanyIndustry(str, Enum):
+    AGRICULTURE = "کشاورزی"
+    ANIMAL_HUSBANDRY = "دامداری"
+    FISHERIES = "شیلات"
+    MINING = "معادن"
+    FORESTRY = "جنگلداری"
+    MANUFACTURING = "صنایع تولیدی"
+    CONSTRUCTION = "صنایع ساخت‌وساز"
+    CHEMICAL_INDUSTRIES = "صنایع شیمیایی"
+    ENERGY_INDUSTRIES = "صنایع انرژی"
+    COMMERCIAL_SERVICES = "خدمات تجاری"
+    FINANCIAL_SERVICES = "خدمات مالی"
+    HEALTH_SERVICES = "خدمات بهداشتی"
+    EDUCATIONAL_SERVICES = "خدمات آموزشی"
+    COMMUNICATION_SERVICES = "خدمات ارتباطی"
+    TOURISM_AND_LEISURE = "گردشگری و تفریحی"
+    INFORMATION_TECHNOLOGY = "فناوری اطلاعات"
+    RESEARCH_AND_DEVELOPMENT = "تحقیق و توسعه"
+    CONSULTING_AND_PROFESSIONAL_SERVICES = "مشاوره و خدمات حرفه‌ای"
+    ADVANCED_EDUCATION_AND_TRAINING = "آموزش‌های پیشرفته و تخصصی"
+    EXECUTIVE_MANAGEMENT_SERVICES = "خدمات مدیریت عالی"
+    HIGHER_EDUCATION_AND_SPECIALIZED_TRAINING = "آموزش‌های عالی و تخصصی"
+    SPECIALIZED_MEDICAL_CARE = "مراقبت‌های پزشکی تخصصی"
+    ART_AND_CULTURE = "هنر و فرهنگ"
+    ADVANCED_RESEARCH_AND_INNOVATION = "تحقیقات و نوآوری‌های پیشرفته"
+    OTHER = "سایر"
+
+
+class EmployerCompanyOwnershipType(str, Enum):
+    PRIVATE = "خصوصی"
+    PUBLIC = "عمومی"
+    COOPERATIVE = "تعاونی"
+    MIXED = "مختلط"
+    STATE = "دولتی"
+    PRIVATE_SECTOR = "بخش خصوصی"
+    PUBLIC_PRIVATE_PARTNERSHIP = "مشارکت عمومی-خصوصی"
+    NON_PROFIT = "غیرانتفاعی"
+    CORPORATE = "شرکتی"
+
+
+class EmployerCompanyEmployeeCount(str, Enum):
+    SMALL = "1-50"
+    MEDIUM = "51-200"
+    LARGE = "201-1000"
+    ENTERPRISE = "1001+"
+
+
+class ImageType(str, Enum):
+    Profile = "پروفایل"
+    BACKGROUND = "پس‌زمینه"
+    OTHER = "دیگر"

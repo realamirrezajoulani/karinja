@@ -2,6 +2,8 @@ from datetime import datetime
 from uuid import uuid4, UUID
 
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
+from schemas.base.employer_company import CompanyBase
+from schemas.base.image import ImageBase
 from schemas.base.job_seeker_education import JobSeekerEducationBase
 from schemas.base.job_seeker_personal_information import JobSeekerPersonalInformationBase
 from schemas.base.job_seeker_resume import JobSeekerResumeBase
@@ -29,6 +31,18 @@ class User(DefaultFields, UserBase, table=True):
     password: str = Field(...)
 
     job_seeker_resumes: list["JobSeekerResume"] = Relationship(
+        back_populates="user",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    companies: list["Company"] = Relationship(
+        back_populates="user",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    images: list["Image"] = Relationship(
         back_populates="user",
         cascade_delete=True,
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -90,5 +104,19 @@ class JobSeekerWorkExperience(DefaultFields, JobSeekerWorkExperienceBase, table=
 class JobSeekerEducation(DefaultFields, JobSeekerEducationBase, table=True):
     resume: JobSeekerResume = Relationship(
         back_populates="job_seeker_educations",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+
+class Company(DefaultFields, CompanyBase, table=True):
+    user: User = Relationship(
+        back_populates="companies",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+
+class Image(DefaultFields, ImageBase, table=True):
+    user: User = Relationship(
+        back_populates="images",
         sa_relationship_kwargs={"lazy": "selectin"}
     )

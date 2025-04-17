@@ -1,6 +1,5 @@
 from uuid import UUID
 from datetime import datetime
-from jdatetime import datetime as jdatetime
 from sqlmodel import Field, SQLModel
 from schemas.base.job_seeker_personal_information import JobSeekerPersonalInformationBase
 from utilities.enumerables import IranProvinces, JobSeekerGender, JobSeekerMaritalStatus, JobSeekerMilitaryServiceStatus
@@ -17,9 +16,6 @@ class JobSeekerPersonalInformationCreate(JobSeekerPersonalInformationBase):
 
 
 class JobSeekerPersonalInformationUpdate(SQLModel):
-    # min_length=5, max_length=30
-    profile_image: str | None = Field(default=None)
-
     residence_province: IranProvinces | None = Field(default=None)
 
     # min_length=5, max_length=250

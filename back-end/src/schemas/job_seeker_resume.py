@@ -16,9 +16,11 @@ class JobSeekerResumeCreate(JobSeekerResumeBase):
 
 
 class JobSeekerResumeUpdate(SQLModel):
-    job_title: str | None = Field(default=None, min_length=5, max_length=30)
+    # min_length=5, max_length=30
+    job_title: str | None = Field(default=None)
 
-    professional_summary: str | None = Field(default=None, max_length=250)
+    # max_length=250
+    professional_summary: str | None = Field(default=None)
 
     employment_status: EmploymentStatusJobSeekerResume | None = Field(default=None)
 

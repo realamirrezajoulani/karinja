@@ -73,3 +73,27 @@ class JobSeekerMilitaryServiceStatus(str, Enum):
     ACADEMIC_EXEMPT = "معافیت تحصیلی"
     MEDICAL_EXEMPT = "معافیت پزشکی"
 
+
+class JobSeekerProficiencyLevel(str, Enum):
+    BEGINNER = "مبتدی"
+    INTERMEDIATE = "متوسط"
+    PROFESSIONAL = "حرفه‌ای"
+    LEARNING = "در حال یادگیری"
+
+
+class JobSeekerCertificateVerificationStatus(str, Enum):
+    VERIFIED = "تایید شده"
+    PENDING = "در انتظار تایید"
+    UNVERIFIED = "تایید نشده"
+
+
+class JobSeekerEducationDegree(str, Enum):
+    PRIMARY_SCHOOL = "دبستان"
+    MIDDLE_SCHOOL = "متوسطه اول"
+    HIGH_SCHOOL = "دبیرستان"
+    DIPLOMA = "دیپلم"
+    ASSOCIATE_DEGREE = "کاردانی"
+    BACHELORS_DEGREE = "کارشناسی"
+    MASTERS_DEGREE = "کارشناسی ارشد"
+    DOCTORATE_DEGREE = "دکتری"
+    OTHER = "سایر"

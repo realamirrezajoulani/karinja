@@ -4,6 +4,8 @@ from uuid import uuid4, UUID
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
 from schemas.base.employer_company import CompanyBase
 from schemas.base.image import ImageBase
+from schemas.base.job_application import JobApplicationBase
+from schemas.base.job_posting import JobPostingBase
 from schemas.base.job_seeker_education import JobSeekerEducationBase
 from schemas.base.job_seeker_personal_information import JobSeekerPersonalInformationBase
 from schemas.base.job_seeker_resume import JobSeekerResumeBase
@@ -86,6 +88,12 @@ class JobSeekerResume(DefaultFields, JobSeekerResumeBase, table=True):
         sa_relationship_kwargs={"lazy": "selectin"}
     )
 
+    job_applications: list["JobApplication"] = Relationship(
+        back_populates="resume",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
 
 class JobSeekerSkill(DefaultFields, JobSeekerSkillBase, table=True):
     resume: JobSeekerResume = Relationship(
@@ -114,9 +122,42 @@ class Company(DefaultFields, CompanyBase, table=True):
         sa_relationship_kwargs={"lazy": "selectin"}
     )
 
+    job_postings: list["JobPosting"] = Relationship(
+        back_populates="company",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
 
 class Image(DefaultFields, ImageBase, table=True):
     user: User = Relationship(
         back_populates="images",
         sa_relationship_kwargs={"lazy": "selectin"}
     )
+
+
+class JobPosting(DefaultFields, JobPostingBase, table=True):
+    job_applications: list["JobApplication"] = Relationship(
+        back_populates="job_posting",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    company: Company = Relationship(
+        back_populates="job_postings",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+
+class JobApplication(DefaultFields, JobApplicationBase, table=True):
+    job_posting: JobPosting = Relationship(
+        back_populates="job_applications",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    resume: JobSeekerResume = Relationship(
+        back_populates="job_applications",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+

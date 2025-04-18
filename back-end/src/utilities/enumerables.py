@@ -150,3 +150,54 @@ class ImageType(str, Enum):
     Profile = "پروفایل"
     BACKGROUND = "پس‌زمینه"
     OTHER = "دیگر"
+
+
+class JobPostingEmploymentType(str, Enum):
+    FULL_TIME = "تمام‌وقت"
+    PART_TIME = "پاره‌وقت"
+    CONTRACTOR = "قراردادی"
+    TEMPORARY = "موقت"
+    VOLUNTEER = "داوطلبانه"
+    INTERN = "کارآموز"
+    OTHER = "سایر"
+
+
+class JobPostingSalaryUnit(str, Enum):
+    HOUR = "ساعتی"
+    DAY = "روزانه"
+    WEEK = "هفتگی"
+    MONTH = "ماهانه"
+    YEAR = "سالانه"
+    OTHER = "سایر"
+
+
+class JobPostingJobCategory(str, Enum):
+    MANAGEMENT = "مدیریتی"
+    TECHNICAL = "فنی"
+    SERVICE = "خدماتی"
+    ADMINISTRATIVE = "اداری"
+    SALES = "فروش"
+    SUPPORT = "پشتیبانی"
+    PRODUCTION = "تولیدی"
+    EDUCATION = "آموزشی"
+    HEALTHCARE = "بهداشتی"
+    OTHER = "سایر"
+
+
+class JobPostingStatus(str, Enum):
+    PENDING_APPROVAL = "در انتظار تایید"
+    PUBLISHED = "منتشر شده"
+    PAUSED = "متوقف شده"
+    EXPIRED = "منقضی شده"
+    CANCELLED = "لغو شده"
+    ARCHIVED = "بایگانی شده"
+
+
+class JobApplicationStatus(str, Enum):
+    SUBMITTED = "ارسال شده"
+    UNDER_REVIEW = "در حال بررسی"
+    INTERVIEW_SCHEDULED = "مصاحبه برنامه‌ریزی شده"
+    INTERVIEWED = "مصاحبه انجام شده"
+    REJECTED = "رد شده"
+    WITHDRAWN = "انصراف داده شده"
+    ARCHIVED = "بایگانی شده"

@@ -201,3 +201,12 @@ class JobApplicationStatus(str, Enum):
     REJECTED = "رد شده"
     WITHDRAWN = "انصراف داده شده"
     ARCHIVED = "بایگانی شده"
+
+
+class NotificationType(str, Enum):
+    INFORMATIVE = "اطلاع‌رسانی"
+    URGENT = "فوری"
+    REMINDER = "یادآوری"
+    ALERT = "هشدار"
+    PROMOTIONAL = "تبلیغاتی"
+    SYSTEM = "سیستمی"

@@ -11,6 +11,8 @@ from schemas.base.job_seeker_personal_information import JobSeekerPersonalInform
 from schemas.base.job_seeker_resume import JobSeekerResumeBase
 from schemas.base.job_seeker_skill import JobSeekerSkillBase
 from schemas.base.job_seeker_work_experience import JobSeekerWorkExperienceBase
+from schemas.base.notification import NotificationBase
+from schemas.base.saved_job import SavedJobBase
 from schemas.base.user import UserBase
 
 
@@ -45,6 +47,18 @@ class User(DefaultFields, UserBase, table=True):
     )
 
     images: list["Image"] = Relationship(
+        back_populates="user",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    notifications: list["Notification"] = Relationship(
+        back_populates="user",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    saved_jobs: list["SavedJob"] = Relationship(
         back_populates="user",
         cascade_delete=True,
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -148,6 +162,12 @@ class JobPosting(DefaultFields, JobPostingBase, table=True):
         sa_relationship_kwargs={"lazy": "selectin"}
     )
 
+    saved_jobs: list["SavedJob"] = Relationship(
+        back_populates="job_posting",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
 
 class JobApplication(DefaultFields, JobApplicationBase, table=True):
     job_posting: JobPosting = Relationship(
@@ -161,3 +181,20 @@ class JobApplication(DefaultFields, JobApplicationBase, table=True):
     )
 
 
+class Notification(DefaultFields, NotificationBase, table=True):
+    user: User = Relationship(
+        back_populates="notifications",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+
+class SavedJob(DefaultFields, SavedJobBase, table=True):
+    user: User = Relationship(
+        back_populates="saved_jobs",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    job_posting: JobPosting = Relationship(
+        back_populates="saved_jobs",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )

@@ -16,4 +16,4 @@ class SavedJobCreate(SavedJobBase):
 
 class SavedJobUpdate(SQLModel):
     # Present solar date
-    saved_date: str = Field(...)
+    saved_date: str | None = Field(default=None)

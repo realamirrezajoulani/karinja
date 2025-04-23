@@ -9,10 +9,10 @@ class JobSeekerWorkExperienceBase(SQLModel):
     # min_length=5, max_length=30
     company_name: str = Field(...)
 
-    # from 50 years ago to now (Solar calendar)
+    # from 50 years ago to now (Solar date)
     start_date: str = Field(...)
 
-    # between 50 years ago and now (Solar calendar)
+    # between 50 years ago and now (Solar date)
     end_date: str | None = Field(default=None)
 
     # min_length=5, max_length=250

@@ -16,13 +16,13 @@ class JobSeekerWorkExperienceCreate(JobSeekerWorkExperienceBase):
 
 class JobSeekerWorkExperienceUpdate(SQLModel):
     # min_length=5, max_length=30
-    title: str = Field(...)
+    title: str | None = Field(default=None)
 
     # min_length=5, max_length=30
-    company_name: str = Field(...)
+    company_name: str | None = Field(default=None)
 
     # Can be entered from 50 years ago to the present (Solar date)
-    start_date: str = Field(...)
+    start_date: str | None = Field(default=None)
 
     # Can be entered between 50 years ago and present (Solar date)
     end_date: str | None = Field(default=None)

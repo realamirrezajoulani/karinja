@@ -19,29 +19,29 @@ class JobPostingCreate(JobPostingBase):
 
 class JobPostingUpdate(SQLModel):
     # min_length=5, max_length=30
-    title: str = Field(...)
+    title: str | None = Field(default=None)
 
-    location: IranProvinces = Field(...)
+    location: IranProvinces | None = Field(default=None)
 
     # min_length=20, max_length=2048
-    job_description: str = Field(...)
+    job_description: str | None = Field(default=None)
 
-    employment_type: JobPostingEmploymentType = Field(...)
+    employment_type: JobPostingEmploymentType | None = Field(default=None)
 
     # Present date
-    posted_date: str = Field(...)
+    posted_date: str | None = Field(default=None)
 
     # From one day to 6 months
     expiry_date: str | None = Field(default=None)
 
-    salary_unit: JobPostingSalaryUnit = Field(...)
+    salary_unit: JobPostingSalaryUnit | None = Field(default=None)
 
     # If the null value is entered, it means that the salary is negotiable
     salary_range: int | None = Field(default=None, sa_column=Column(BIGINT))
 
-    job_categoriy: JobPostingJobCategory = Field(...)
+    job_categoriy: JobPostingJobCategory | None = Field(default=None)
 
     # ge=1, le=100
-    vacancy_count: int = Field(...)
+    vacancy_count: int | None = Field(default=None)
 
-    status: JobPostingStatus = Field(...)
+    status: JobPostingStatus = Field(default=None)

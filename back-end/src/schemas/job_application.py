@@ -19,10 +19,10 @@ class JobApplicationCreate(JobApplicationBase):
 
 class JobApplicationUpdate(SQLModel):
     # Present date
-    application_date: str = Field(...)
+    application_date: str | None = Field(default=None)
 
     # From one day to 6 months
-    status: JobApplicationStatus = Field(...)
+    status: JobApplicationStatus | None = Field(default=None)
 
     # min_length=5, max_length=250
     cover_letter: str | None = Field(default=None)

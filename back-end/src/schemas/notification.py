@@ -16,9 +16,9 @@ class NotificationCreate(NotificationBase):
 
 
 class JobSeekerWorkExperienceUpdate(SQLModel):
-    type: NotificationType = Field(...)
+    type: NotificationType | None = Field(default=None)
 
     # min_length=5, max_length=50
-    message: str = Field(...)
+    message: str | None = Field(default=None)
 
-    is_read: bool = Field(...)
+    is_read: bool | None = Field(default=None)

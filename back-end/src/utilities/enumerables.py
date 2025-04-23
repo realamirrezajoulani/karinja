@@ -2,10 +2,10 @@ from enum import Enum
 
 
 class UserRole(str, Enum):
-    FULL_ADMIN = "ادمین کامل"
-    ADMIN = "ادمین"
-    EMPLOYER = "کارفرما"
-    JOB_SEEKER = "کارجو"
+    FULL_ADMIN = "full_admin"
+    ADMIN = "admin"
+    EMPLOYER = "employer"
+    JOB_SEEKER = "job_seeker"
 
 
 class UserAccountStatus(str, Enum):
@@ -210,3 +210,82 @@ class NotificationType(str, Enum):
     ALERT = "هشدار"
     PROMOTIONAL = "تبلیغاتی"
     SYSTEM = "سیستمی"
+
+
+class ActivityLogType(str, Enum):
+    GET_USER = "مشاهده کاربر"
+    GET_ALL_USERS = "مشاهده تمامی کاربران"
+    POST_USER = "ایجاد کاربر"
+    UPDATE_USER = "ویرایش کاربر"
+    DELETE_USER = "حذف کاربر"
+    
+    GET_EMPLOYER_COMPANY = "مشاهده شرکت کارفرما"
+    GET_ALL_EMPLOYER_COMPANY = "مشاهده تمامی شرکت‌های کارفرما"
+    POST_EMPLOYER_COMPANY = "ایجاد شرکت کارفرما"
+    UPDATE_EMPLOYER_COMPANY = "ویرایش شرکت کارفرما"
+    DELETE_EMPLOYER_COMPANY = "حذف شرکت کارفرما"
+    
+    GET_JOB_APPLICATION = "مشاهده درخواست شغلی"
+    GET_ALL_JOB_APPLICATION = "مشاهده تمامی درخواست‌های شغلی"
+    POST_JOB_APPLICATION = "ایجاد درخواست شغلی"
+    UPDATE_JOB_APPLICATION = "ویرایش درخواست شغلی"
+    DELETE_JOB_APPLICATION = "حذف درخواست شغلی"
+    
+    GET_JOB_POSTING = "مشاهده آگهی شغلی"
+    GET_ALL_JOB_POSTING = "مشاهده تمامی آگهی‌های شغلی"
+    POST_JOB_POSTING = "ایجاد آگهی شغلی"
+    UPDATE_JOB_POSTING = "ویرایش آگهی شغلی"
+    DELETE_JOB_POSTING = "حذف آگهی شغلی"
+    
+    GET_JOB_SEEKER_EDUCATION = "مشاهده تحصیلات جویای کار"
+    GET_ALL_JOB_SEEKER_EDUCATION = "مشاهده تمامی تحصیلات جویای کار"
+    POST_JOB_SEEKER_EDUCATION = "اضافه کردن تحصیلات جویای کار"
+    UPDATE_JOB_SEEKER_EDUCATION = "ویرایش تحصیلات جویای کار"
+    DELETE_JOB_SEEKER_EDUCATION = "حذف تحصیلات جویای کار"
+    
+    GET_JOB_SEEKER_PERSONAL_INFORMATION = "مشاهده شخصی جویای کار"
+    GET_ALL_JOB_SEEKER_PERSONAL_INFORMATION = "مشاهده تمامی شخصی جویای کار"
+    POST_JOB_SEEKER_PERSONAL_INFORMATION = "اضافه کردن شخصی جویای کار"
+    UPDATE_JOB_SEEKER_PERSONAL_INFORMATION = "ویرایش شخصی جویای کار"
+    DELETE_JOB_SEEKER_PERSONAL_INFORMATION = "حذف شخصی جویای کار"
+    
+    GET_JOB_SEEKER_RESUME = "مشاهده رزومه جویای کار"
+    GET_ALL_JOB_SEEKER_RESUME = "مشاهده تمامی رزومه‌های جویای کار"
+    POST_JOB_SEEKER_RESUME = "اضافه کردن رزومه جویای کار"
+    UPDATE_JOB_SEEKER_RESUME = "ویرایش رزومه جویای کار"
+    DELETE_JOB_SEEKER_RESUME = "حذف رزومه جویای کار"
+    
+    GET_JOB_SEEKER_SKILL = "مشاهده مهارت‌های جویای کار"
+    GET_ALL_JOB_SEEKER_SKILL = "مشاهده تمامی مهارت‌های جویای کار"
+    POST_JOB_SEEKER_SKILL = "اضافه کردن مهارت‌های جویای کار"
+    UPDATE_JOB_SEEKER_SKILL = "ویرایش مهارت‌های جویای کار"
+    DELETE_JOB_SEEKER_SKILL = "حذف مهارت‌های جویای کار"
+    
+    GET_JOB_SEEKER_WORK_EXPERIENCE = "مشاهده تجربه کاری جویای کار"
+    GET_ALL_JOB_SEEKER_WORK_EXPERIENCE = "مشاهده تمامی تجربه‌های کاری جویای کار"
+    POST_JOB_SEEKER_WORK_EXPERIENCE = "اضافه کردن تجربه کاری جویای کار"
+    UPDATE_JOB_SEEKER_WORK_EXPERIENCE = "ویرایش تجربه کاری جویای کار"
+    DELETE_JOB_SEEKER_WORK_EXPERIENCE = "حذف تجربه کاری جویای کار"
+    
+    GET_SAVED_JOB = "مشاهده شغل‌های ذخیره شده"
+    GET_ALL_SAVED_JOB = "مشاهده تمامی شغل‌های ذخیره شده"
+    POST_SAVED_JOB = "ذخیره شغل"
+    DELETE_SAVED_JOB = "حذف شغل ذخیره شده"
+    
+    GET_NOTIFICATION = "مشاهده اعلان‌ها"
+    GET_ALL_NOTIFICATION = "مشاهده تمامی اعلان‌ها"
+    POST_NOTIFICATION = "ایجاد اعلان"
+    UPDATE_NOTIFICATION = "ویرایش اعلان"
+    DELETE_NOTIFICATION = "حذف اعلان"
+    
+    GET_IMAGE = "مشاهده تصویر"
+    GET_ALL_IMAGE = "مشاهده تمامی تصاویر"
+    UPDATE_IMAGE = "ویرایش تصویر"
+    POST_IMAGE = "بارگذاری تصویر"
+    DELETE_IMAGE = "حذف تصویر"
+
+    SYSTEM_ERROR = "خطای سیستمی"
+    LOGIN = "ورود"
+    SIGNUP = "ثبت نام"
+
+    OTHER = "سایر"

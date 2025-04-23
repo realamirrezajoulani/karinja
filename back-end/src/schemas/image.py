@@ -17,8 +17,8 @@ class ImageCreate(ImageBase):
 
 
 class ImageUpdate(SQLModel):
-    title: ImageType = Field(...)
+    title: ImageType | None = Field(default=None)
 
     # min_length=5, max_length=30
-    url: str = Field(...)
+    url: str | None = Field(default=None)
 

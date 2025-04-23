@@ -19,36 +19,38 @@ class CompanyCreate(CompanyBase):
 
 class CompanyUpdate(SQLModel):
     # ge=10000000, le=999999999999
-    registration_number: int = Field(
+    registration_number: int | None = Field(
+        default=None,
         unique=True,
         sa_column=Column(BIGINT)
     )
 
     # min_length=5, max_length=30
-    full_name: str = Field(...)
+    full_name: str | None = Field(default=None)
 
     # min_length=5, max_length=64
     summary: str | None = Field(default=None)
 
-    industry: EmployerCompanyIndustry = Field(...)
+    industry: EmployerCompanyIndustry | None = Field(default=None)
 
-    ownership_type: EmployerCompanyOwnershipType = Field(...)
+    ownership_type: EmployerCompanyOwnershipType | None = Field(default=None)
 
     # pattern = https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)
     website_address: str | None = Field(default=None)
 
     # ge=(Present year) - 200, le=(Present year)
-    founded_year: int = Field(...)
+    founded_year: int | None = Field(default=None)
 
-    employee_count: EmployerCompanyEmployeeCount = Field(...)
+    employee_count: EmployerCompanyEmployeeCount | None = Field(default=None)
 
     # min_length=5, max_length=255
-    address: str = Field(...)
+    address: str | None = Field(default=None)
 
-    phone: int = Field(
+    phone: int | None = Field(
+        default=None,
         unique=True,
         sa_column=Column(BIGINT)
     )
 
     # min_length=30, max_length=2048
-    description: str = Field(...)
+    description: str | None = Field(default=None)

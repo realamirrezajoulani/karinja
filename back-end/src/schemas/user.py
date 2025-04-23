@@ -26,7 +26,6 @@ class UserUpdate(SQLModel):
     phone: int | None = Field(
         default=None,
         unique=True,
-        sa_column=Column(BIGINT),
     )
 
     # pattern: ^[a-z]+[a-z0-9._]+[a-z]+$, min_length=3, max_length=20

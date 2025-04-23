@@ -3,6 +3,7 @@ from fastapi.responses import ORJSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
+from database import lifespan
 from routers import user
 
 
@@ -12,7 +13,8 @@ A lightweight RESTful API for a karinja application using FastAPI and SQLModel ð
 """
 
 
-app = FastAPI(title="karinja API",
+app = FastAPI(lifespan=lifespan,
+              title="karinja API",
               description=description,
               version="0.0.1",
               contact={

@@ -19,10 +19,9 @@ class CompanyCreate(CompanyBase):
 
 class CompanyUpdate(SQLModel):
     # ge=10000000, le=999999999999
-    registration_number: int | None = Field(
+    registration_number: str | None = Field(
         default=None,
         unique=True,
-        sa_column=Column(BIGINT)
     )
 
     # min_length=5, max_length=30
@@ -46,10 +45,9 @@ class CompanyUpdate(SQLModel):
     # min_length=5, max_length=255
     address: str | None = Field(default=None)
 
-    phone: int | None = Field(
+    phone: str | None = Field(
         default=None,
         unique=True,
-        sa_column=Column(BIGINT)
     )
 
     # min_length=30, max_length=2048

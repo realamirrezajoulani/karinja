@@ -1,11 +1,11 @@
-import select
 from fastapi import APIRouter, Depends, Query
 
 from dependencies import get_session
-from sqlmodel.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.relational_models import User
 from schemas.relational_schemas import RelationalUserPublic
+from sqlmodel import select
 
 
 router = APIRouter()

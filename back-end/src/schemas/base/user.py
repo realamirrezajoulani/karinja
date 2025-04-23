@@ -1,5 +1,5 @@
 from pydantic import EmailStr
-from sqlmodel import Field, SQLModel, Column, BIGINT
+from sqlmodel import Field, SQLModel
 
 from utilities.enumerables import UserAccountStatus, UserRole
 
@@ -11,10 +11,9 @@ class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True)
 
     # ge=9000000000, le=9999999999
-    phone: int | None = Field(
+    phone: str | None = Field(
         default=None,
-        unique=True,
-        sa_column=Column(BIGINT),
+        unique=True
     )
 
     # pattern: ^[a-z]+[a-z0-9._]+[a-z]+$, min_length=3, max_length=20

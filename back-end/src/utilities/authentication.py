@@ -7,10 +7,6 @@ from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 
-from models.relational_models import User
-from schemas.authentication import LoginRequest
-from utilities.enumerables import Roles
-
 ACCESS_TOKEN_EXPIRE_MINUTES = 15  # Access token lifetime (15 minutes)
 REFRESH_TOKEN_EXPIRE_MINUTES = 10080  # Refresh token lifetime (7 days)
 

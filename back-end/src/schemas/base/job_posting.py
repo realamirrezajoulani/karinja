@@ -6,9 +6,9 @@ from utilities.enumerables import IranProvinces, JobPostingEmploymentType, JobPo
 
 class JobPostingBase(SQLModel):
     # min_length=5, max_length=30
-    title: str = Field(...)
+    title: str = Field(index=True)
 
-    location: IranProvinces = Field(...)
+    location: IranProvinces = Field(index=True)
 
     # min_length=20, max_length=2048
     job_description: str = Field(...)
@@ -26,7 +26,7 @@ class JobPostingBase(SQLModel):
     # If the null value is entered, it means that the salary is negotiable
     salary_range: int | None = Field(default=None, sa_column=Column(BIGINT))
 
-    job_categoriy: JobPostingJobCategory = Field(...)
+    job_categoriy: JobPostingJobCategory = Field(index=True)
 
     # ge=1, le=100
     vacancy_count: int = Field(...)

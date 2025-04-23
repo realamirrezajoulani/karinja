@@ -8,6 +8,7 @@ class CompanyBase(SQLModel):
     # ge=10000000, le=999999999999
     registration_number: int = Field(
         unique=True,
+        index=True,
         sa_column=Column(BIGINT)
     )
 
@@ -17,7 +18,7 @@ class CompanyBase(SQLModel):
     # min_length=5, max_length=64
     summary: str | None = Field(default=None)
 
-    industry: EmployerCompanyIndustry = Field(...)
+    industry: EmployerCompanyIndustry = Field(index=True)
 
     ownership_type: EmployerCompanyOwnershipType = Field(...)
 
@@ -34,6 +35,7 @@ class CompanyBase(SQLModel):
 
     phone: int = Field(
         unique=True,
+        index=True,
         sa_column=Column(BIGINT)
     )
 

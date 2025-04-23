@@ -4,13 +4,13 @@ from sqlmodel import Field, SQLModel
 
 class JobSeekerWorkExperienceBase(SQLModel):
     # min_length=5, max_length=30
-    title: str = Field(...)
+    title: str = Field(index=True)
 
     # min_length=5, max_length=30
     company_name: str = Field(...)
 
     # from 50 years ago to now (Solar date)
-    start_date: str = Field(...)
+    start_date: str = Field(index=True)
 
     # between 50 years ago and now (Solar date)
     end_date: str | None = Field(default=None)

@@ -6,12 +6,12 @@ from utilities.enumerables import EmploymentStatusJobSeekerResume
 
 class JobSeekerResumeBase(SQLModel):
     # min_length=5, max_length=30
-    job_title: str = Field(...)
+    job_title: str = Field(index=True)
 
     # max_length=250
     professional_summary: str | None = Field(default=None)
 
-    employment_status: EmploymentStatusJobSeekerResume = Field(...)
+    employment_status: EmploymentStatusJobSeekerResume = Field(index=True)
 
     is_visible: bool = Field(...)
 

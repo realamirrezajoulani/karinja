@@ -4,7 +4,7 @@ from sqlmodel import Field, SQLModel
 
 class SavedJobBase(SQLModel):
     # Present solar date
-    saved_date: str = Field(...)
+    saved_date: str = Field(index=True)
 
     user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
 

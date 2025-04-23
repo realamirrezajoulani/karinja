@@ -8,13 +8,13 @@ class JobSeekerEducationBase(SQLModel):
     # min_length=5, max_length=30
     institution_name: str = Field(...)
 
-    Degree: JobSeekerEducationDegree = Field(...)
+    Degree: JobSeekerEducationDegree = Field(index=True)
 
     # min_length=3, max_length=50
-    StudyField: str = Field(...)
+    StudyField: str = Field(index=True)
 
     # from 40 years ago to now (Solar calendar)
-    start_date: str = Field(...)
+    start_date: str = Field(index=True)
 
     # between 40 years ago and now (Solar calendar)
     end_date: str | None = Field(default=None)

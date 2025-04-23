@@ -5,7 +5,7 @@ from utilities.enumerables import NotificationType
 
 
 class NotificationBase(SQLModel):
-    type: NotificationType = Field(...)
+    type: NotificationType = Field(index=True)
 
     # min_length=5, max_length=50
     message: str = Field(...)

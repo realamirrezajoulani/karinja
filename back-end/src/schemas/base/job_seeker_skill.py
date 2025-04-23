@@ -6,16 +6,17 @@ from utilities.enumerables import JobSeekerCertificateVerificationStatus, JobSee
 
 class JobSeekerSkillBase(SQLModel):
     # min_length=5, max_length=30
-    title: str = Field(...)
+    title: str = Field(index=True)
 
     # min_length=5, max_length=30
-    proficiency_level: JobSeekerProficiencyLevel = Field(...)
+    proficiency_level: JobSeekerProficiencyLevel = Field(index=True)
 
     has_certificate: bool = Field(...)
 
     # min_length=5, max_length=30
     certificate_issuing_organization: str | None = Field(
-        default=None
+        default=None,
+        index=True
     )
 
     # min_length=5, max_length=30

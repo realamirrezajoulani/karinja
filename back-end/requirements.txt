@@ -3,6 +3,8 @@ anyio==4.9.0
 asyncpg==0.30.0
 click==8.1.8
 colorama==0.4.6
+dnspython==2.7.0
+email_validator==2.2.0
 fastapi==0.115.12
 greenlet==3.1.1
 h11==0.14.0

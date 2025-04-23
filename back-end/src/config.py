@@ -3,7 +3,6 @@ from fastapi.responses import ORJSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import main
 
 
 description = """
@@ -49,4 +48,3 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     return response
 
-app.include_router(main.router, tags=["main"])

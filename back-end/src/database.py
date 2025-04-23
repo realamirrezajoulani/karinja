@@ -33,9 +33,6 @@ async def lifespan(_: FastAPI):
     during the startup and shutdown of the FastAPI application.
     """
 
-    # redis = await aioredis.from_url("redis://localhost:6379")
-    # FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
-
     # Initialize the database tables before starting the application
     await create_tables()
 

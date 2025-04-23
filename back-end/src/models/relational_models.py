@@ -2,6 +2,7 @@ from datetime import datetime
 from uuid import uuid4, UUID
 
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
+from schemas.base.activity_log import ActivityLogBase
 from schemas.base.employer_company import CompanyBase
 from schemas.base.image import ImageBase
 from schemas.base.job_application import JobApplicationBase
@@ -59,6 +60,12 @@ class User(DefaultFields, UserBase, table=True):
     )
 
     saved_jobs: list["SavedJob"] = Relationship(
+        back_populates="user",
+        cascade_delete=True,
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+    activity_logs: list["ActivityLog"] = Relationship(
         back_populates="user",
         cascade_delete=True,
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -196,5 +203,12 @@ class SavedJob(DefaultFields, SavedJobBase, table=True):
 
     job_posting: JobPosting = Relationship(
         back_populates="saved_jobs",
+        sa_relationship_kwargs={"lazy": "selectin"}
+    )
+
+
+class ActivityLog(DefaultFields, ActivityLogBase, table=True):
+    user: User = Relationship(
+        back_populates="activity_logs",
         sa_relationship_kwargs={"lazy": "selectin"}
     )

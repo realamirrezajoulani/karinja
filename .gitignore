@@ -1,3 +1,7 @@
 back-end/src/.venv/
 back-end/src/__pycache__/
 back-end/src/routers/__pycache__/
+back-end/src/schemas/__pycache__/
+back-end/src/schemas/base/__pycache__/
+back-end/src/models/__pycache__/
+back-end/src/utilities/__pycache__/

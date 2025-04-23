@@ -1,6 +1,11 @@
 from enum import Enum
 
 
+class LogicalOperator(str, Enum):
+    AND = "and"
+    OR = "or"
+    NOT = "not"
+
 class UserRole(str, Enum):
     FULL_ADMIN = "full_admin"
     ADMIN = "admin"

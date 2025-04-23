@@ -8,10 +8,10 @@ class JobSeekerEducationBase(SQLModel):
     # min_length=5, max_length=30
     institution_name: str = Field(...)
 
-    Degree: JobSeekerEducationDegree = Field(index=True)
+    degree: JobSeekerEducationDegree = Field(index=True)
 
     # min_length=3, max_length=50
-    StudyField: str = Field(index=True)
+    study_field: str = Field(index=True)
 
     # from 40 years ago to now (Solar calendar)
     start_date: str = Field(index=True)

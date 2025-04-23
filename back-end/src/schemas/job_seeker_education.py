@@ -21,10 +21,10 @@ class JobSeekerEducationUpdate(SQLModel):
     # min_length=5, max_length=30
     institution_name: str | None = Field(default=None)
 
-    Degree: JobSeekerEducationDegree | None = Field(default=None)
+    degree: JobSeekerEducationDegree | None = Field(default=None)
 
     # min_length=3, max_length=50
-    StudyField: str | None = Field(default=None)
+    study_field: str | None = Field(default=None)
 
     # from 40 years ago to now (Solar calendar)
     start_date: str | None = Field(default=None)

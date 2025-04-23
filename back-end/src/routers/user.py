@@ -1,21 +1,28 @@
-from fastapi import APIRouter, Depends, Query
+from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import EmailStr
 
 from dependencies import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.relational_models import User
 from schemas.relational_schemas import RelationalUserPublic
-from sqlmodel import select
+from sqlmodel import and_, not_, or_, select
+from sqlalchemy.exc import IntegrityError
+
+from schemas.user import UserCreate, UserUpdate
+from utilities.authentication import get_password_hash
+from utilities.enumerables import LogicalOperator, UserAccountStatus, UserRole
 
 
 router = APIRouter()
 
 
 @router.get(
-    "/admins/",
+    "/users/",
     response_model=list[RelationalUserPublic],
 )
-async def get_admins(
+async def get_users(
     *,
     session: AsyncSession = Depends(get_session),
     offset: int = Query(default=0, ge=0),
@@ -26,216 +33,152 @@ async def get_admins(
     return users.all()
 
 
-# @router.post(
-#     "/admins/",
-#     response_model=RelationalAdminPublic,
-# )
-# async def create_admin(
-#         *,
-#         session: AsyncSession = Depends(get_session),
-#         admin_create: AdminCreate,
-#         _user: dict = Depends(
-#             require_roles(
-#                 AdminRole.SUPER_ADMIN.value,
-#                 AdminRole.GENERAL_ADMIN.value,
-#             )
-#         ),
-#         _token: str = Depends(oauth2_scheme),
-# ):
-#     final_role = AdminRole.GENERAL_ADMIN.value if _user["role"] == AdminRole.GENERAL_ADMIN.value else admin_create.role
+@router.post(
+    "/users/",
+    response_model=RelationalUserPublic,
+)
+async def create_user(
+        *,
+        session: AsyncSession = Depends(get_session),
+        user_create: UserCreate,
+):
+    hashed_password = get_password_hash(user_create.password)
 
-#     hashed_password = get_password_hash(admin_create.password)
+    try:
+        db_user = User(
+            full_name=user_create.username,
+            email=user_create.email,
+            phone=user_create.phone,
+            username=user_create.username,
+            role=user_create.role,
+            account_status=user_create.account_status,
+            password=hashed_password,
+        )
 
-#     try:
-#         db_admin = Admin(
-#             name_prefix=admin_create.name_prefix,
-#             first_name=admin_create.first_name,
-#             middle_name=admin_create.middle_name,
-#             last_name=admin_create.last_name,
-#             name_suffix=admin_create.name_suffix,
-#             national_id=admin_create.national_id,
-#             gender=admin_create.gender,
-#             birthday=admin_create.birthday,
-#             phone=admin_create.phone,
-#             address=admin_create.address,
-#             username=admin_create.username,
-#             email=admin_create.email,
-#             role=final_role,
-#             status=admin_create.status,
-#             password=hashed_password,
-#         )
+        session.add(db_user)
+        await session.commit()
+        await session.refresh(db_user)
 
-#         session.add(db_admin)
-#         await session.commit()
-#         await session.refresh(db_admin)
+        return db_user
 
-#         return db_admin
-
-#     except IntegrityError:
-#         await session.rollback()
-#         raise HTTPException(
-#             status_code=409,
-#             detail="نام کاربری یا پست الکترونیکی یا کد ملی قبلا ثبت شده است"
-#         )
-#     except Exception as e:
-#         await session.rollback()
-#         raise HTTPException(
-#             status_code=500,
-#             detail=f"{e}خطا در ایجاد ادمین: "
-#         )
+    except IntegrityError as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="نام کاربری یا پست الکترونیکی یا شماره تلفن قبلا ثبت شده است"
+        )
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"{e}خطا در ایجاد کاربر: "
+        )
 
 
-# @router.get(
-#     "/admins/{admin_id}",
-#     response_model=RelationalAdminPublic,
-# )
-# async def get_admin(
-#         *,
-#         session: AsyncSession = Depends(get_session),
-#         admin_id: UUID,
-#         _user: dict = Depends(
-#             require_roles(
-#                 AdminRole.SUPER_ADMIN.value,
-#                 AdminRole.GENERAL_ADMIN.value,
-#             )
-#         ),
-#         _token: str = Depends(oauth2_scheme),
-# ):
-#     if _user["role"] == AdminRole.GENERAL_ADMIN.value and admin_id != UUID(_user["id"]):
-#         raise HTTPException(status_code=403,
-#                             detail="شما دسترسی لازم برای مشاهده اطلاعات ادمین های  دیگر را ندارید")
+@router.get(
+    "/users/{user_id}",
+    response_model=RelationalUserPublic,
+)
+async def get_user(
+        *,
+        session: AsyncSession = Depends(get_session),
+        user_id: UUID,
+):
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
 
-#     admin = await session.get(Admin, admin_id)
-#     if not admin:
-#         raise HTTPException(status_code=404, detail="ادمین پیدا نشد")
-
-#     return admin
+    return user
 
 
-# @router.patch(
-#     "/admins/{admin_id}",
-#     response_model=RelationalAdminPublic,
-# )
-# async def patch_admin(
-#         *,
-#         session: AsyncSession = Depends(get_session),
-#         admin_id: UUID,
-#         admin_update: AdminUpdate,
-#         _user: dict = Depends(
-#             require_roles(
-#                 AdminRole.SUPER_ADMIN.value,
-#                 AdminRole.GENERAL_ADMIN.value,
-#             )
-#         ),
-#         _token: str = Depends(oauth2_scheme),
-# ):
+@router.patch(
+    "/users/{user_id}",
+    response_model=RelationalUserPublic,
+)
+async def patch_admin(
+        *,
+        session: AsyncSession = Depends(get_session),
+        user_id: UUID,
+        user_update: UserUpdate,
+):
+    admin = await session.get(User, user_id)
+    if not admin:
+        raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
 
-#     if _user["role"] == AdminRole.GENERAL_ADMIN.value and admin_id != UUID(_user["id"]):
-#         raise HTTPException(status_code=403,
-#                             detail="شما دسترسی لازم برای ویرایش اطلاعات ادمین های  دیگر را ندارید")
+    update_data = user_update.model_dump(exclude_unset=True)
+    if "password" in update_data:
+        update_data["password"] = get_password_hash(update_data["password"])
 
-#     admin = await session.get(Admin, admin_id)
-#     if not admin:
-#         raise HTTPException(status_code=404, detail="ادمین پیدا نشد")
+    admin.sqlmodel_update(update_data)
 
-#     update_data = admin_update.model_dump(exclude_unset=True)
-#     if "password" in update_data:
-#         update_data["password"] = get_password_hash(update_data["password"])
+    await session.commit()
+    await session.refresh(admin)
 
-#     admin.sqlmodel_update(update_data)
-
-#     await session.commit()
-#     await session.refresh(admin)
-
-#     return admin
+    return admin
 
 
-# @router.delete(
-#     "/admins/{admin_id}",
-#     response_model=dict[str, str],
-# )
-# async def delete_admin(
-#     *,
-#     session: AsyncSession = Depends(get_session),
-#     admin_id: UUID,
-#     _user: dict = Depends(
-#         require_roles(
-#             AdminRole.SUPER_ADMIN.value,
-#             AdminRole.GENERAL_ADMIN.value,
-#         )
-#     ),
-#     _token: str = Depends(oauth2_scheme),
-# ):
-#     if _user["role"] == AdminRole.GENERAL_ADMIN.value and admin_id != UUID(_user["id"]):
-#         raise HTTPException(status_code=403,
-#                             detail="شما دسترسی لازم برای حذف ادمین های  دیگر را ندارید")
+@router.delete(
+    "/users/{user_id}",
+    response_model=dict[str, str],
+)
+async def delete_user(
+    *,
+    session: AsyncSession = Depends(get_session),
+    admin_id: UUID,
+):
+    user = await session.get(User, admin_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
 
-#     admin = await session.get(Admin, admin_id)
-#     if not admin:
-#         raise HTTPException(status_code=404, detail="ادمین پیدا نشد")
+    await session.delete(user)
+    await session.commit()
 
-#     await session.delete(admin)
-#     await session.commit()
-
-#     return {"msg": "ادمین با موفقیت حذف شد"}
+    return {"msg": "کاربر با موفقیت حذف شد"}
 
 
-# @router.get(
-#     "/admins/search/",
-#     response_model=list[RelationalAdminPublic],
-# )
-# async def search_admins(
-#         *,
-#         session: AsyncSession = Depends(get_session),
-#         username: str | None = None,
-#         email: EmailStr | None = None,
-#         role: AdminRole | None = None,
-#         status: AdminStatus | None = None,
-#         national_id: str | None = None,
-#         gender: str | None = None,
-#         phone: int | None = None,
-#         operator: LogicalOperator,
-#         offset: int = Query(default=0, ge=0),
-#         limit: int = Query(default=100, le=100),
-#         _user: dict = Depends(
-#             require_roles(
-#                 AdminRole.SUPER_ADMIN.value,
-#             )
-#         ),
-#         _token: str = Depends(oauth2_scheme),
-# ):
-#     conditions = []
-#     if username:
-#         conditions.append(Admin.username.ilike(f"%{username}%"))
-#     if email:
-#         conditions.append(Admin.email == email)
-#     if role:
-#         conditions.append(Admin.role == role)
-#     if status:
-#         conditions.append(Admin.status == status)
-#     if national_id:
-#         conditions.append(Admin.national_id == national_id)
-#     if gender:
-#         conditions.append(Admin.gender == gender)
-#     if phone:
-#         conditions.append(Admin.phone == phone)
+@router.get(
+    "/admins/search/",
+    response_model=list[RelationalUserPublic],
+)
+async def search_admins(
+        *,
+        session: AsyncSession = Depends(get_session),
+        email: EmailStr | None = None,
+        phone: str | None = None,
+        username: str | None = None,
+        role: UserRole | None = None,
+        account_status: UserAccountStatus | None = None,
+        operator: LogicalOperator,
+        offset: int = Query(default=0, ge=0),
+        limit: int = Query(default=100, le=100),
+):
+    conditions = []
+    if email:
+        conditions.append(User.email == email)
+    if phone:
+        conditions.append(User.phone == email)
+    if username:
+        conditions.append(User.username.ilike(f"%{username}%"))
+    if role:
+        conditions.append(User.role == role)
+    if account_status:
+        conditions.append(User.account_status == account_status)
 
-#     if not conditions:
-#         raise HTTPException(status_code=400, detail="هیچ مقداری برای جست و جو وجود ندارد")
+    if not conditions:
+        raise HTTPException(status_code=400, detail="هیچ مقداری برای جست و جو وجود ندارد")
 
-#     if operator == LogicalOperator.AND:
-#         query = select(Admin).where(and_(*conditions))
-#     elif operator == LogicalOperator.OR:
-#         query = select(Admin).where(or_(*conditions))
-#     elif operator == LogicalOperator.NOT:
-#         query = select(Admin).where(and_(not_(*conditions)))
-#     else:
-#         raise HTTPException(status_code=400, detail="عملگر نامعتبر مشخص شده است")
+    if operator == LogicalOperator.AND:
+        query = select(User).where(and_(*conditions))
+    elif operator == LogicalOperator.OR:
+        query = select(User).where(or_(*conditions))
+    elif operator == LogicalOperator.NOT:
+        query = select(User).where(not_(and_(*conditions)))
+    else:
+        raise HTTPException(status_code=400, detail="عملگر نامعتبر مشخص شده است")
 
-#     query = query.offset(offset).limit(limit)
-#     result = await session.execute(query)
-#     admins = result.scalars().all()
-#     if not admins:
-#         raise HTTPException(status_code=404, detail="مشتری پیدا نشد")
+    result = await session.exec(query.offset(offset).limit(limit))
+    users = result.all()
+    if not users:
+        raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
 
-#     return admins
+    return users

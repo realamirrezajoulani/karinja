@@ -24,4 +24,4 @@ class UserBase(SQLModel):
 
     role: UserRole = Field(...)
 
-    AccountStatus: UserAccountStatus = Field(...)
+    account_status: UserAccountStatus = Field(...)

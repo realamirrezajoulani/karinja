@@ -23,7 +23,7 @@ class UserUpdate(SQLModel):
     email: EmailStr | None = Field(default=None, unique=True)
 
     # ge=9000000000, le=9999999999
-    phone: int | None = Field(
+    phone: str | None = Field(
         default=None,
         unique=True,
     )
@@ -36,4 +36,4 @@ class UserUpdate(SQLModel):
 
     role: UserRole | None = Field(default=None)
 
-    AccountStatus: UserAccountStatus | None = Field(default=None)
+    account_status: UserAccountStatus | None = Field(default=None)

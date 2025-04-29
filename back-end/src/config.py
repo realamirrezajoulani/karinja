@@ -4,7 +4,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import lifespan
-from routers import user
+from routers import api_status, user
 
 
 
@@ -53,4 +53,6 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
+app.include_router(api_status.router, tags=["API status"])
 app.include_router(user.router, tags=["Users"])
+

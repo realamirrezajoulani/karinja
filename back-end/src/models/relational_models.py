@@ -1,8 +1,7 @@
 from datetime import datetime
 from uuid import uuid4, UUID
-from pydantic import BaseModel
 
-from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
+from sqlmodel import Column, DateTime, Field, Relationship, func
 from schemas.base.activity_log import ActivityLogBase
 from schemas.base.employer_company import CompanyBase
 from schemas.base.image import ImageBase

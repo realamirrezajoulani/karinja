@@ -95,7 +95,7 @@ async def get_user(
     "/users/{user_id}",
     response_model=RelationalUserPublic,
 )
-async def patch_admin(
+async def patch_user(
         *,
         session: AsyncSession = Depends(get_session),
         user_id: UUID,
@@ -124,9 +124,9 @@ async def patch_admin(
 async def delete_user(
     *,
     session: AsyncSession = Depends(get_session),
-    admin_id: UUID,
+    user_id: UUID,
 ):
-    user = await session.get(User, admin_id)
+    user = await session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
 
@@ -137,10 +137,10 @@ async def delete_user(
 
 
 @router.get(
-    "/admins/search/",
+    "/users/search/",
     response_model=list[RelationalUserPublic],
 )
-async def search_admins(
+async def search_users(
         *,
         session: AsyncSession = Depends(get_session),
         email: EmailStr | None = None,

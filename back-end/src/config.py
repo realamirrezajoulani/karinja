@@ -35,7 +35,8 @@ origins = [
     "https://localhost:3000",
     "http://localhost:5173",
     "https://localhost:5173",
-    "https://karinja-gold.vercel.app/"
+    "https://karinja-gold.vercel.app/",
+    "https://karinja-gold.vercel.app"
 ]
 
 app.add_middleware(

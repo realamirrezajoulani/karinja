@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4, UUID
 
 from sqlmodel import Column, DateTime, Field, Relationship, func
@@ -64,7 +65,7 @@ class User(UserBase, table=True):
 class JobSeekerPersonalInformation(JobSeekerPersonalInformationBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    job_seeker_resumes: list["JobSeekerResume"] = Relationship(
+    job_seeker_resume: Optional["JobSeekerResume"] = Relationship(
         back_populates="job_seeker_personal_information",
         sa_relationship_kwargs={"lazy": "selectin"}
     )
@@ -86,8 +87,8 @@ class JobSeekerResume(JobSeekerResumeBase, table=True):
         sa_relationship_kwargs={"lazy": "selectin"}
     )
 
-    job_seeker_personal_information: JobSeekerPersonalInformation = Relationship(
-        back_populates="job_seeker_resumes",
+    job_seeker_personal_information: JobSeekerPersonalInformation | None = Relationship(
+        back_populates="job_seeker_resume",
         sa_relationship_kwargs={"lazy": "selectin"}
     )
 

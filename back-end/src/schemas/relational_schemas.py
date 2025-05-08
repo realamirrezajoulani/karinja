@@ -23,12 +23,12 @@ class RelationalUserPublic(UserPublic):
 
 
 class RelationalJobSeekerPersonalInformationPublic(JobSeekerPersonalInformationPublic):
-    job_seeker_resumes: list[JobSeekerResumePublic] = []
+    job_seeker_resume: JobSeekerResumePublic
 
 
 class RelationalJobSeekerResumePublic(JobSeekerResumePublic):
     user: UserPublic
-    job_seeker_personal_information: JobSeekerPersonalInformationPublic
+    job_seeker_personal_information: JobSeekerPersonalInformationPublic | None = None
     job_seeker_skills: list[JobSeekerSkillPublic] = []
     job_seeker_work_experiences: list[JobSeekerWorkExperiencePublic] = []
     job_seeker_educations: list[JobSeekerEducationPublic] = []

@@ -26,9 +26,10 @@ async def get_job_seeker_personal_informations (
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
 ):
-    users_query = select(JobSeekerPersonalInformation).offset(offset).limit(limit).order_by(JobSeekerPersonalInformation.created_at)
-    users = await session.exec(users_query)
-    return users.all()
+    jspis_query = select(JobSeekerPersonalInformation).offset(offset).limit(limit).order_by(JobSeekerPersonalInformation.created_at)
+    jspis = await session.exec(jspis_query)
+
+    return jspis.all()
 
 
 @router.post(
@@ -40,8 +41,6 @@ async def create_job_seeker_personal_information(
         session: AsyncSession = Depends(get_session),
         job_seeker_personal_information_create: JobSeekerPersonalInformationCreate,
 ):
-    hashed_password = get_password_hash(job_seeker_personal_information_create.password)
-
     try:
         db_jspi = JobSeekerPersonalInformation(
             residence_province=job_seeker_personal_information_create.residence_province,
@@ -49,14 +48,15 @@ async def create_job_seeker_personal_information(
             marital_status=job_seeker_personal_information_create.marital_status,
             birth_year=job_seeker_personal_information_create.birth_year,
             gender=job_seeker_personal_information_create.gender,
-            military_service_status=job_seeker_personal_information_create.military_service_status
+            military_service_status=job_seeker_personal_information_create.military_service_status,
+            job_seeker_resume_id=job_seeker_personal_information_create.job_seeker_resume_id
         )
 
         session.add(db_jspi)
         await session.commit()
         await session.refresh(db_jspi)
 
-        return db_jspi
+        return RelationalJobSeekerPersonalInformationPublic.model_validate(db_jspi)
 
     except Exception as e:
         await session.rollback()

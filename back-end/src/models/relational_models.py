@@ -67,7 +67,7 @@ class JobSeekerPersonalInformation(JobSeekerPersonalInformationBase, table=True)
 
     job_seeker_resume: Optional["JobSeekerResume"] = Relationship(
         back_populates="job_seeker_personal_information",
-        sa_relationship_kwargs={"lazy": "selectin"}
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
     )
 
     created_at: datetime = Field(
@@ -89,7 +89,7 @@ class JobSeekerResume(JobSeekerResumeBase, table=True):
 
     job_seeker_personal_information: JobSeekerPersonalInformation | None = Relationship(
         back_populates="job_seeker_resume",
-        sa_relationship_kwargs={"lazy": "selectin"}
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
     )
 
     job_seeker_skills: list["JobSeekerSkill"] = Relationship(

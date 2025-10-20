@@ -15,7 +15,7 @@ class NotificationCreate(NotificationBase):
     user_id: UUID
 
 
-class JobSeekerWorkExperienceUpdate(SQLModel):
+class NotificationUpdate(SQLModel):
     type: NotificationType | None = Field(default=None)
 
     # min_length=5, max_length=50

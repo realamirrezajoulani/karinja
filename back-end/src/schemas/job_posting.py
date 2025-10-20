@@ -14,7 +14,7 @@ class JobPostingPublic(JobPostingBase):
 
 
 class JobPostingCreate(JobPostingBase):
-    pass
+    company_id: UUID
 
 
 class JobPostingUpdate(SQLModel):

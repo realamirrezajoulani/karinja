@@ -10,7 +10,7 @@ from models import relational_models
 
 
 # Retrieve the database URL from environment variables
-POSTGRESQL_URL = getenv("DATABASE_URL")
+POSTGRESQL_URL = getenv("P2_DATABASE_URL")
 
 # Create an asynchronous SQLAlchemy engine with logging enabled
 async_engine = create_async_engine(POSTGRESQL_URL)

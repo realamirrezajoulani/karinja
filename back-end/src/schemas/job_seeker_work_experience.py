@@ -11,7 +11,7 @@ class JobSeekerWorkExperiencePublic(JobSeekerWorkExperienceBase):
 
 
 class JobSeekerWorkExperienceCreate(JobSeekerWorkExperienceBase):
-    pass
+    job_seeker_resume_id: UUID
 
 
 class JobSeekerWorkExperienceUpdate(SQLModel):

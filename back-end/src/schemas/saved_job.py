@@ -11,7 +11,8 @@ class SavedJobPublic(SavedJobBase):
 
 
 class SavedJobCreate(SavedJobBase):
-    pass
+    user_id: UUID
+    job_posting_id: UUID
 
 
 class SavedJobUpdate(SQLModel):

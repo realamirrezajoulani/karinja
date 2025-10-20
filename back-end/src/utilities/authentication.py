@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 ACCESS_TOKEN_EXPIRE_MINUTES = 15  # Access token lifetime (15 minutes)
 REFRESH_TOKEN_EXPIRE_MINUTES = 10080  # Refresh token lifetime (7 days)
 
-SECRET_KEY = os.getenv("SECURITY_KEY")
+SECRET_KEY = os.getenv("P2_SECURITY_KEY")
 
 ALGORITHM = "HS512"
 

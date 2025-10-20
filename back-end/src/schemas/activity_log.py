@@ -14,7 +14,7 @@ class ActivityLogPublic(ActivityLogBase):
 
 
 class ActivityLogCreate(ActivityLogBase):
-    pass
+    user_id: UUID
 
 
 class ActivityLogUpdate(SQLModel):

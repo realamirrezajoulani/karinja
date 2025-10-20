@@ -4,7 +4,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import lifespan
-from routers import api_status, job_seeker_personal_information, job_seeker_resume, user, job_seeker_education, job_seeker_skill, job_seeker_work_experience
+from routers import api_status, job_seeker_personal_information, job_seeker_resume, user, job_seeker_education, job_seeker_skill, job_seeker_work_experience, employer_company
 
 
 
@@ -64,3 +64,4 @@ app.include_router(job_seeker_personal_information.router, tags=["Job Seeker Per
 app.include_router(job_seeker_education.router, tags=["Job Seeker Education"])
 app.include_router(job_seeker_skill.router, tags=["Job Seeker Skill"])
 app.include_router(job_seeker_work_experience.router, tags=["Job Seeker Work Experiences"])
+app.include_router(employer_company.router, tags=["Employer Company"])

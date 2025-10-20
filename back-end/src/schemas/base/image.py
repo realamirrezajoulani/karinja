@@ -9,5 +9,3 @@ class ImageBase(SQLModel):
 
     # min_length=5, max_length=30
     url: str = Field(index=True)
-
-    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")

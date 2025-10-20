@@ -32,6 +32,3 @@ class JobPostingBase(SQLModel):
     vacancy_count: int = Field(...)
 
     status: JobPostingStatus = Field(...)
-
-    company_id: UUID = Field(foreign_key="company.id", ondelete="CASCADE")
-

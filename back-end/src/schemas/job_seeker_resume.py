@@ -12,7 +12,7 @@ class JobSeekerResumePublic(JobSeekerResumeBase):
 
 
 class JobSeekerResumeCreate(JobSeekerResumeBase):
-    pass
+    user_id: UUID
 
 
 class JobSeekerResumeUpdate(SQLModel):

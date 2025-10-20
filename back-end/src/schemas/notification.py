@@ -12,7 +12,7 @@ class NotificationPublic(NotificationBase):
 
 
 class NotificationCreate(NotificationBase):
-    pass
+    user_id: UUID
 
 
 class JobSeekerWorkExperienceUpdate(SQLModel):

@@ -11,5 +11,3 @@ class NotificationBase(SQLModel):
     message: str = Field(...)
 
     is_read: bool = Field(...)
-
-    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")

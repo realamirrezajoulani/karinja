@@ -18,5 +18,3 @@ class JobSeekerPersonalInformationBase(SQLModel):
     gender: JobSeekerGender = Field(...)
 
     military_service_status: JobSeekerMilitaryServiceStatus | None = Field(default=None)
-
-    job_seeker_resume_id: UUID = Field(foreign_key="jobseekerresume.id", ondelete="CASCADE")

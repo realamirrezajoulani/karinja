@@ -14,7 +14,7 @@ class JobSeekerEducationPublic(JobSeekerEducationBase):
 
 
 class JobSeekerEducationCreate(JobSeekerEducationBase):
-    pass
+    job_seeker_resume_id: UUID
 
 
 class JobSeekerEducationUpdate(SQLModel):

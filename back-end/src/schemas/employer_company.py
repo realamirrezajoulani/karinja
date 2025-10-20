@@ -14,7 +14,7 @@ class CompanyPublic(CompanyBase):
 
 
 class CompanyCreate(CompanyBase):
-    pass
+    user_id: UUID
 
 
 class CompanyUpdate(SQLModel):

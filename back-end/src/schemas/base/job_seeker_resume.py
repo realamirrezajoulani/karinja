@@ -15,5 +15,3 @@ class JobSeekerResumeBase(SQLModel):
 
     is_visible: bool = Field(...)
 
-    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
-

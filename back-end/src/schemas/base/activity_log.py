@@ -13,4 +13,3 @@ class ActivityLogBase(SQLModel):
     # Present solar date
     activity_date: str = Field(index=True)
 
-    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")

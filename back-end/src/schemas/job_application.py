@@ -14,7 +14,8 @@ class JobApplicationPublic(JobApplicationBase):
 
 
 class JobApplicationCreate(JobApplicationBase):
-    pass
+    job_posting_id: UUID
+    job_seeker_resume_id: UUID
 
 
 class JobApplicationUpdate(SQLModel):

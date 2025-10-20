@@ -12,7 +12,7 @@ class JobSeekerPersonalInformationPublic(JobSeekerPersonalInformationBase):
 
 
 class JobSeekerPersonalInformationCreate(JobSeekerPersonalInformationBase):
-    pass
+    job_seeker_resume_id: UUID
 
 
 class JobSeekerPersonalInformationUpdate(SQLModel):

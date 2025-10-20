@@ -17,5 +17,3 @@ class JobSeekerWorkExperienceBase(SQLModel):
 
     # min_length=5, max_length=250
     description: str | None = Field(default=None)
-
-    job_seeker_resume_id: UUID = Field(foreign_key="jobseekerresume.id", ondelete="CASCADE")

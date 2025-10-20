@@ -12,7 +12,7 @@ class JobSeekerSkillPublic(JobSeekerSkillBase):
 
 
 class JobSeekerSkillCreate(JobSeekerSkillBase):
-    pass
+    job_seeker_resume_id: UUID
 
 
 class JobSeekerSkillUpdate(SQLModel):

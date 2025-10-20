@@ -37,8 +37,3 @@ class CompanyBase(SQLModel):
 
     # min_length=30, max_length=2048
     description: str = Field(...)
-
-    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
-
-
-

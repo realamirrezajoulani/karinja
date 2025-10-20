@@ -65,7 +65,8 @@ class User(UserBase, table=True):
 class JobSeekerPersonalInformation(JobSeekerPersonalInformationBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    job_seeker_resume: Optional["JobSeekerResume"] = Relationship(
+    job_seeker_resume_id: UUID = Field(foreign_key="jobseekerresume.id", ondelete="CASCADE")
+    job_seeker_resume: "JobSeekerResume" = Relationship(
         back_populates="job_seeker_personal_information",
         sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
     )
@@ -82,6 +83,7 @@ class JobSeekerPersonalInformation(JobSeekerPersonalInformationBase, table=True)
 class JobSeekerResume(JobSeekerResumeBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
     user: User = Relationship(
         back_populates="job_seeker_resumes",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -124,6 +126,7 @@ class JobSeekerResume(JobSeekerResumeBase, table=True):
 class JobSeekerSkill(JobSeekerSkillBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    job_seeker_resume_id: UUID = Field(foreign_key="jobseekerresume.id", ondelete="CASCADE")
     resume: JobSeekerResume = Relationship(
         back_populates="job_seeker_skills",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -141,6 +144,7 @@ class JobSeekerSkill(JobSeekerSkillBase, table=True):
 class JobSeekerWorkExperience(JobSeekerWorkExperienceBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    job_seeker_resume_id: UUID = Field(foreign_key="jobseekerresume.id", ondelete="CASCADE")
     resume: JobSeekerResume = Relationship(
         back_populates="job_seeker_work_experiences",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -158,6 +162,7 @@ class JobSeekerWorkExperience(JobSeekerWorkExperienceBase, table=True):
 class JobSeekerEducation(JobSeekerEducationBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    job_seeker_resume_id: UUID = Field(foreign_key="jobseekerresume.id", ondelete="CASCADE")
     resume: JobSeekerResume = Relationship(
         back_populates="job_seeker_educations",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -175,6 +180,7 @@ class JobSeekerEducation(JobSeekerEducationBase, table=True):
 class Company(CompanyBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
     user: User = Relationship(
         back_populates="companies",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -197,6 +203,7 @@ class Company(CompanyBase, table=True):
 class Image(ImageBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
     user: User = Relationship(
         back_populates="images",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -219,6 +226,7 @@ class JobPosting(JobPostingBase, table=True):
         sa_relationship_kwargs={"lazy": "selectin"}
     )
 
+    company_id: UUID = Field(foreign_key="company.id", ondelete="CASCADE")
     company: Company = Relationship(
         back_populates="job_postings",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -241,11 +249,13 @@ class JobPosting(JobPostingBase, table=True):
 class JobApplication(JobApplicationBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    job_posting_id: UUID = Field(foreign_key="jobposting.id", ondelete="CASCADE")
     job_posting: JobPosting = Relationship(
         back_populates="job_applications",
         sa_relationship_kwargs={"lazy": "selectin"}
     )
 
+    job_seeker_resume_id: UUID = Field(foreign_key="jobseekerresume.id", ondelete="CASCADE")
     resume: JobSeekerResume = Relationship(
         back_populates="job_applications",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -263,6 +273,7 @@ class JobApplication(JobApplicationBase, table=True):
 class Notification(NotificationBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
     user: User = Relationship(
         back_populates="notifications",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -280,11 +291,13 @@ class Notification(NotificationBase, table=True):
 class SavedJob(SavedJobBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
     user: User = Relationship(
         back_populates="saved_jobs",
         sa_relationship_kwargs={"lazy": "selectin"}
     )
 
+    job_posting_id: UUID = Field(foreign_key="jobposting.id", ondelete="CASCADE")
     job_posting: JobPosting = Relationship(
         back_populates="saved_jobs",
         sa_relationship_kwargs={"lazy": "selectin"}
@@ -302,6 +315,7 @@ class SavedJob(SavedJobBase, table=True):
 class ActivityLog(ActivityLogBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
+    user_id: UUID = Field(foreign_key="user.id", ondelete="CASCADE")
     user: User = Relationship(
         back_populates="activity_logs",
         sa_relationship_kwargs={"lazy": "selectin"}

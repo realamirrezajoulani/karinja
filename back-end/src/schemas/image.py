@@ -13,7 +13,7 @@ class ImagePublic(ImageBase):
 
 
 class ImageCreate(ImageBase):
-    pass
+    user_id: UUID
 
 
 class ImageUpdate(SQLModel):

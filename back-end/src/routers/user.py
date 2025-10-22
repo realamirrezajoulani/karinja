@@ -28,6 +28,45 @@ async def get_users(
     session: AsyncSession = Depends(get_session),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
+    # Only ADMIN and FULL_ADMIN can call this endpoint
+    _user: dict = Depends(
+        require_roles(
+            UserRole.FULL_ADMIN.value,
+            UserRole.ADMIN.value,
+        )
+    ),
+    # ensure caller is authenticated (token required)
+    _: str = Depends(oauth2_scheme),
+):
+    """
+    List users.
+    - FULL_ADMIN: sees all users
+    - ADMIN: sees all users except FULL_ADMIN
+    """
+    requester_role = _user["role"]
+
+    # Start with base query and ordering
+    users_query = select(User).order_by(User.created_at.desc())
+
+    # Apply role-based visibility for ADMIN (exclude FULL_ADMIN)
+    if requester_role == UserRole.ADMIN.value:
+        users_query = users_query.where(User.role != UserRole.FULL_ADMIN.value)
+
+    # Apply pagination
+    users_query = users_query.offset(offset).limit(limit)
+
+    result = await session.exec(users_query)
+    return result.all()
+
+
+@router.post(
+    "/users/",
+    response_model=RelationalUserPublic,
+)
+async def create_user(
+    *,
+    session: AsyncSession = Depends(get_session),
+    user_create: UserCreate,
     _user: dict = Depends(
         require_roles(
             UserRole.FULL_ADMIN.value,
@@ -36,41 +75,32 @@ async def get_users(
     ),
     _: str = Depends(oauth2_scheme),
 ):
-    users_query = select(User).offset(offset).limit(limit).order_by(User.created_at)
+    """
+    Create a new user.
+    - FULL_ADMIN: may create any role (including FULL_ADMIN)
+    - ADMIN: may create any role except FULL_ADMIN (403 if attempt)
+    """
+    requester_role = _user["role"]
 
-    if _user["role"] != UserRole.FULL_ADMIN.value:
-        users_query.where(User.role != UserRole.FULL_ADMIN.value and User.role != UserRole.ADMIN.value)
-
-    users = await session.exec(users_query)
-    return users.all()
-
-
-@router.post(
-    "/users/",
-    response_model=RelationalUserPublic,
-)
-async def create_user(
-        *,
-        session: AsyncSession = Depends(get_session),
-        user_create: UserCreate,
-        _user: dict = Depends(
-            require_roles(
-                UserRole.FULL_ADMIN.value,
-                UserRole.ADMIN.value,
-        )
-    ),
-):
-    if _user["role"] == UserRole.ADMIN.value and user_create.role == UserRole.FULL_ADMIN.value:
+    # Reject attempts by ADMIN to create FULL_ADMIN
+    if requester_role == UserRole.ADMIN.value and user_create.role == UserRole.FULL_ADMIN.value:
         raise HTTPException(
             status_code=403,
-            detail="بیا 👍"
+            detail="Admins cannot create full_admin users"
         )
-    
+
+    # Basic validation: password must be provided
+    if not user_create.password or not user_create.password.strip():
+        raise HTTPException(status_code=400, detail="Password is required")
+
     hashed_password = get_password_hash(user_create.password)
+
+    # Prefer explicit full_name if provided, fall back to username
+    full_name = getattr(user_create, "full_name", None) or user_create.username
 
     try:
         db_user = User(
-            full_name=user_create.username,
+            full_name=full_name,
             email=user_create.email,
             phone=user_create.phone,
             username=user_create.username,
@@ -85,18 +115,100 @@ async def create_user(
 
         return db_user
 
-    except IntegrityError as e:
+    except IntegrityError:
         await session.rollback()
+        # keep the message generic to avoid leaking DB details
         raise HTTPException(
             status_code=409,
-            detail="نام کاربری یا پست الکترونیکی یا شماره تلفن قبلا ثبت شده است"
+            detail="Username, email or phone already registered"
         )
     except Exception as e:
         await session.rollback()
+        # return a safe error message while still surfacing the exception text for debugging
         raise HTTPException(
             status_code=500,
-            detail=f"{e}خطا در ایجاد کاربر: "
+            detail=f"Error creating user: {e}"
         )
+
+
+# @router.get(
+#     "/users/",
+#     response_model=list[RelationalUserPublic],
+# )
+# async def get_users(
+#     *,
+#     session: AsyncSession = Depends(get_session),
+#     offset: int = Query(default=0, ge=0),
+#     limit: int = Query(default=100, le=100),
+#     _user: dict = Depends(
+#         require_roles(
+#             UserRole.FULL_ADMIN.value,
+#             UserRole.ADMIN.value,
+#         )
+#     ),
+#     _: str = Depends(oauth2_scheme),
+# ):
+#     users_query = select(User).offset(offset).limit(limit).order_by(User.created_at)
+
+#     if _user["role"] != UserRole.FULL_ADMIN.value:
+#         users_query.where(User.role != UserRole.FULL_ADMIN.value and User.role != UserRole.ADMIN.value)
+
+#     users = await session.exec(users_query)
+#     return users.all()
+
+
+# @router.post(
+#     "/users/",
+#     response_model=RelationalUserPublic,
+# )
+# async def create_user(
+#         *,
+#         session: AsyncSession = Depends(get_session),
+#         user_create: UserCreate,
+#         _user: dict = Depends(
+#             require_roles(
+#                 UserRole.FULL_ADMIN.value,
+#                 UserRole.ADMIN.value,
+#         )
+#     ),
+# ):
+#     if _user["role"] == UserRole.ADMIN.value and user_create.role == UserRole.FULL_ADMIN.value:
+#         raise HTTPException(
+#             status_code=403,
+#             detail="بیا 👍"
+#         )
+    
+#     hashed_password = get_password_hash(user_create.password)
+
+#     try:
+#         db_user = User(
+#             full_name=user_create.username,
+#             email=user_create.email,
+#             phone=user_create.phone,
+#             username=user_create.username,
+#             role=user_create.role,
+#             account_status=user_create.account_status,
+#             password=hashed_password,
+#         )
+
+#         session.add(db_user)
+#         await session.commit()
+#         await session.refresh(db_user)
+
+#         return db_user
+
+#     except IntegrityError as e:
+#         await session.rollback()
+#         raise HTTPException(
+#             status_code=409,
+#             detail="نام کاربری یا پست الکترونیکی یا شماره تلفن قبلا ثبت شده است"
+#         )
+#     except Exception as e:
+#         await session.rollback()
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"{e}خطا در ایجاد کاربر: "
+#         )
 
 
 @router.get(
@@ -104,32 +216,54 @@ async def create_user(
     response_model=RelationalUserPublic,
 )
 async def get_user(
-        *,
-        session: AsyncSession = Depends(get_session),
-        user_id: UUID,
-        _user: dict = Depends(
-            require_roles(
-                UserRole.FULL_ADMIN.value,
-                UserRole.ADMIN.value,
-                UserRole.EMPLOYER.value,
-                UserRole.JOB_SEEKER.value
-            )
+    *,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID,
+    _user: dict = Depends(
+        require_roles(
+            UserRole.FULL_ADMIN.value,
+            UserRole.ADMIN.value,
+            UserRole.EMPLOYER.value,
+            UserRole.JOB_SEEKER.value,
         )
+    ),
+    _: str = Depends(oauth2_scheme),
 ):
+    """
+    Role-based visibility for fetching a single user:
+    - FULL_ADMIN: can fetch any user
+    - ADMIN: can fetch anyone except FULL_ADMIN
+    - EMPLOYER / JOB_SEEKER: can fetch only users with roles EMPLOYER or JOB_SEEKER
+      (i.e. they can see each other and themselves)
+    """
+
+    requester_role = _user["role"]
+
+    # base query
     query = select(User).where(User.id == user_id)
-    if _user["role"] == UserRole.ADMIN.value:
-        query.where(User.role != UserRole.FULL_ADMIN.value)
-    elif _user["role"] in (UserRole.JOB_SEEKER.value, UserRole.EMPLOYER.value):
-        query.where(User.role not in (UserRole.FULL_ADMIN.value, UserRole.ADMIN.value))
 
-    
+    # apply visibility rules by reassigning the query (SQLModel/SQLAlchemy returns new stmt)
+    if requester_role == UserRole.FULL_ADMIN.value:
+        # full access, no extra where clause
+        pass
+    elif requester_role == UserRole.ADMIN.value:
+        # admin cannot access full_admin users
+        query = query.where(User.role != UserRole.FULL_ADMIN.value)
+    elif requester_role in (UserRole.EMPLOYER.value, UserRole.JOB_SEEKER.value):
+        # employer/job_seeker can only see EMPLOYER or JOB_SEEKER users
+        # this also allows them to see themselves because their role is in the list
+        query = query.where(User.role.in_([UserRole.EMPLOYER.value, UserRole.JOB_SEEKER.value]))
+    else:
+        # shouldn't happen because dependency restricts roles, but safe-guard
+        raise HTTPException(status_code=403, detail="Not allowed")
 
-    user = await session.exec(query)
-    if not user.one_or_none():
-        raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
+    # execute and fetch single result properly
+    result = await session.exec(query)
+    user = result.one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
     return user
-
 
 @router.patch(
     "/users/{user_id}",
@@ -147,7 +281,8 @@ async def patch_user(
                 UserRole.EMPLOYER.value,
                 UserRole.JOB_SEEKER.value
             )
-        )
+        ),
+        _: str = Depends(oauth2_scheme),
 ):
     result = await session.exec(select(User).where(User.id == user_id))
     target_user = result.one_or_none()
@@ -222,7 +357,8 @@ async def delete_user(
             UserRole.EMPLOYER.value,
             UserRole.JOB_SEEKER.value
         )
-    )
+    ),
+    _: str = Depends(oauth2_scheme),
 ):
     result = await session.exec(select(User).where(User.id == user_id))
     target_user = result.one_or_none()

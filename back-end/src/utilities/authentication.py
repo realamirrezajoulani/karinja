@@ -4,8 +4,13 @@ from typing import Any
 
 import jwt
 from fastapi import HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from passlib.context import CryptContext
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select
+
+from schemas.authentication import LoginRequest
+from models.relational_models import User
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 15  # Access token lifetime (15 minutes)
 REFRESH_TOKEN_EXPIRE_MINUTES = 10080  # Refresh token lifetime (7 days)
@@ -15,46 +20,59 @@ SECRET_KEY = os.getenv("P2_SECURITY_KEY")
 ALGORITHM = "HS512"
 
 # Password hashing context using PBKDF2-HMAC-SHA512
-pwd_context = CryptContext(schemes=["pbkdf2_sha512"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha512"], deprecated="auto", pbkdf2_sha512__default_rounds=300_000)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/", )
+refresh_header_scheme = APIKeyHeader(name="Authorization-Refresh", auto_error=False)
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
 
-    # Create a copy of the input data to avoid mutating the original object
+    # copy to avoid mutating the passed dict
     to_encode = data.copy()
 
-    # Calculate the expiration time by adding the expiration delta (if provided)
-    # to the current time, otherwise use the default expiration time.
-    expire = datetime.now(timezone.utc) + (
-        expires_delta if expires_delta else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    now = datetime.now(timezone.utc)
 
-    # Add the expiration time to the data to be encoded
-    to_encode.update({"exp": expire})
+    # normalize expires_delta to a timedelta
+    if isinstance(expires_delta, timedelta):
+        delta = expires_delta
+    elif isinstance(expires_delta, int):
+        # interpret int as minutes
+        delta = timedelta(minutes=expires_delta)
+    elif expires_delta is None:
+        delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    else:
+        raise TypeError("expires_delta must be None, int (minutes), or timedelta")
 
-    # Encode the JWT using the secret key and specified algorithm
+    expire = now + delta
+
+    # use an int timestamp for 'exp' to avoid any timezone/serialization edge cases
+    to_encode.update({"exp": int(expire.timestamp())})
+
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def decode_access_token(token: str) -> dict[str, Any]:
+def decode_access_token(token: str, verify_exp: bool = True) -> dict:
+    """
+    Decode and verify a JWT. Raises HTTPException with a clear Persian message on error.
+    """
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        key = SECRET_KEY
+
+        options = {"verify_exp": verify_exp}
+        payload = jwt.decode(token, key, algorithms=[ALGORITHM], options=options)
+        return payload
+
     except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=401,
-            detail="توکن منقضی شده است"
-        )
+        raise HTTPException(status_code=401, detail="توکن منقضی شده است")
+    except jwt.InvalidSignatureError:
+        raise HTTPException(status_code=401, detail="امضای توکن نامعتبر است")
+    except jwt.InvalidAlgorithmError:
+        raise HTTPException(status_code=401, detail="الگوریتم امضای توکن پشتیبانی نمی‌شود")
     except jwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=401,
-            detail="توکن نامعتبر است"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=401,
-            detail=f"Error decoding JWT: {e}"
-        )
+        raise HTTPException(status_code=401, detail="فرمت/امضای توکن نامعتبر است")
+    except Exception:
+        raise HTTPException(status_code=401, detail="توکن نامعتبر است")
 
 
 def get_password_hash(password: str) -> str:
@@ -95,30 +113,17 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
-# async def authenticate_user(credentials: LoginRequest, session: AsyncSession):
-#     username, password = credentials.username, credentials.password
+async def authenticate_user(credentials: LoginRequest, session: AsyncSession):
+    username, password = credentials.username, credentials.password
 
-#     user_models = [
-#         (Admin, {"username": username, "role": AdminRole.SUPER_ADMIN.value}),
-#         (Admin, {"username": username, "role": AdminRole.GENERAL_ADMIN.value}),
-#         (Customer, {"username": username})
-#     ]
+    result = await session.exec(select(User).where(User.username == username))
 
-#     for model, filters in user_models:
-#         query = select(model)
+    user = result.one_or_none()
 
-#         for field, value in filters.items():
-#             query = query.where(getattr(model, field) == value)
-#         result = await session.execute(query)
-#         user_instance = result.scalars().one_or_none()
-
-#         if user_instance and verify_password(password, user_instance.password):
-
-#             role = filters.get("role", CustomerRole.CUSTOMER.value)
-#             return {"user": user_instance, "role": role}
-
-#     raise HTTPException(
-#         status_code=401,
-#         detail="نام کاربری یا گذرواژه پیدا نشد"
-#     )
-
+    if not user or not verify_password(password, user.password):
+        raise HTTPException(
+            status_code=401,
+            detail="نام کاربری یا گذرواژه پیدا نشد"
+        )
+    
+    return {"user_id": user.id, "user_role": user.role.value}

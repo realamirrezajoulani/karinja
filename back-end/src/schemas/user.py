@@ -15,6 +15,14 @@ class UserPublic(UserBase):
 class UserCreate(UserBase):
     password: str = Field(...)
 
+class UserCreateJobSeeker(UserBase):
+    password: str = Field(...)
+    role: UserRole = UserRole.JOB_SEEKER.value
+
+class UserCreateEmployer(UserBase):
+    password: str = Field(...)
+    role: UserRole = UserRole.EMPLOYER.value
+
 
 class UserUpdate(SQLModel):
     # min_length=5, max_length=30

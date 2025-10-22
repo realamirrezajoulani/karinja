@@ -1,18 +1,38 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from dependencies import get_session
-from sqlalchemy.ext.asyncio import AsyncSession
+from dependencies import get_session, require_roles
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
-from models.relational_models import JobSeekerWorkExperience
+from models.relational_models import JobSeekerResume, JobSeekerWorkExperience
 from schemas.job_seeker_work_experience import JobSeekerWorkExperienceCreate, JobSeekerWorkExperienceUpdate
 from schemas.relational_schemas import RelationalJobSeekerWorkExperiencePublic
 from sqlmodel import and_, not_, or_, select
 
-from utilities.enumerables import LogicalOperator
+from utilities.enumerables import LogicalOperator, UserRole
 
 
 router = APIRouter()
+
+# Roles allowed to READ (includes Employer for read-only)
+READ_ROLE_DEP = Depends(
+    require_roles(
+        UserRole.FULL_ADMIN.value,
+        UserRole.ADMIN.value,
+        UserRole.JOB_SEEKER.value,
+        UserRole.EMPLOYER.value,
+    )
+)
+
+# Roles allowed to WRITE (Employer excluded)
+WRITE_ROLE_DEP = Depends(
+    require_roles(
+        UserRole.FULL_ADMIN.value,
+        UserRole.ADMIN.value,
+        UserRole.JOB_SEEKER.value,
+    )
+)
 
 
 @router.get(
@@ -24,10 +44,41 @@ async def get_job_seeker_work_experiences(
     session: AsyncSession = Depends(get_session),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
+    _user: dict = READ_ROLE_DEP,
 ):
-    jswe_query = select(JobSeekerWorkExperience).offset(offset).limit(limit).order_by(JobSeekerWorkExperience.created_at)
-    jswe = await session.exec(jswe_query)
-    return jswe.all()
+    """
+    List work experiences.
+    - FULL_ADMIN / ADMIN: see all experiences (paginated)
+    - EMPLOYER: read-only, can see all experiences
+    - JOB_SEEKER: see only experiences tied to their resume(s)
+    """
+    requester_role = _user["role"]
+    requester_id = _user["id"]
+
+    if requester_role == UserRole.JOB_SEEKER.value:
+        # JOB_SEEKER: restrict to their own resume(s)
+        resumes_stmt = select(JobSeekerResume.id).where(JobSeekerResume.user_id == requester_id)
+        resume_ids = (await session.exec(resumes_stmt)).all()
+        if not resume_ids:
+            return []
+        stmt = (
+            select(JobSeekerWorkExperience)
+            .where(JobSeekerWorkExperience.job_seeker_resume_id.in_(resume_ids))
+            .order_by(JobSeekerWorkExperience.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+    else:
+        # ADMIN / FULL_ADMIN / EMPLOYER: see all
+        stmt = (
+            select(JobSeekerWorkExperience)
+            .order_by(JobSeekerWorkExperience.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+
+    result = await session.exec(stmt)
+    return result.all()
 
 
 @router.post(
@@ -35,10 +86,30 @@ async def get_job_seeker_work_experiences(
     response_model=RelationalJobSeekerWorkExperiencePublic,
 )
 async def create_job_seeker_work_experience(
-        *,
-        session: AsyncSession = Depends(get_session),
-        job_seeker_work_experience_create: JobSeekerWorkExperienceCreate,
+    *,
+    session: AsyncSession = Depends(get_session),
+    job_seeker_work_experience_create: JobSeekerWorkExperienceCreate,
+    _user: dict = WRITE_ROLE_DEP,
 ):
+    """
+    Create a work experience.
+    - JOB_SEEKER: can create only for their own resume(s) -> job_seeker_resume_id must belong to them
+    - ADMIN / FULL_ADMIN: can create for any resume_id
+    - EMPLOYER: cannot create (write excluded)
+    """
+    requester_role = _user["role"]
+    requester_id = _user["id"]
+
+    resume_id = job_seeker_work_experience_create.job_seeker_resume_id
+    if requester_role == UserRole.JOB_SEEKER.value:
+        if resume_id is None:
+            raise HTTPException(status_code=400, detail="job_seeker_resume_id is required")
+        resume = await session.get(JobSeekerResume, resume_id)
+        if not resume:
+            raise HTTPException(status_code=404, detail="Resume not found")
+        if str(resume.user_id) != str(requester_id):
+            raise HTTPException(status_code=403, detail="You cannot add experience to another user's resume")
+
     try:
         db_jswe = JobSeekerWorkExperience(
             title=job_seeker_work_experience_create.title,
@@ -46,7 +117,7 @@ async def create_job_seeker_work_experience(
             start_date=job_seeker_work_experience_create.start_date,
             end_date=job_seeker_work_experience_create.end_date,
             description=job_seeker_work_experience_create.description,
-            job_seeker_resume_id=job_seeker_work_experience_create.job_seeker_resume_id
+            job_seeker_resume_id=resume_id,
         )
 
         session.add(db_jswe)
@@ -55,12 +126,12 @@ async def create_job_seeker_work_experience(
 
         return db_jswe
 
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=409, detail="Database constraint violated or duplicate")
     except Exception as e:
         await session.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"{e}خطا در ایجاد تجربه کاری کارجو: "
-        )
+        raise HTTPException(status_code=500, detail=f"Error creating job seeker work experience: {e}")
 
 
 @router.get(
@@ -68,15 +139,29 @@ async def create_job_seeker_work_experience(
     response_model=RelationalJobSeekerWorkExperiencePublic,
 )
 async def get_job_seeker_work_experience(
-        *,
-        session: AsyncSession = Depends(get_session),
-        job_seeker_work_experience_id: UUID,
+    *,
+    session: AsyncSession = Depends(get_session),
+    job_seeker_work_experience_id: UUID,
+    _user: dict = READ_ROLE_DEP,
 ):
-    jss = await session.get(JobSeekerWorkExperience, job_seeker_work_experience_id)
-    if not jss:
-        raise HTTPException(status_code=404, detail="تجربه کاری کارجو پیدا نشد")
+    """
+    Retrieve a single work experience.
+    - FULL_ADMIN / ADMIN / EMPLOYER: allowed
+    - JOB_SEEKER: only if this experience belongs to one of their resumes
+    """
+    jswe = await session.get(JobSeekerWorkExperience, job_seeker_work_experience_id)
+    if not jswe:
+        raise HTTPException(status_code=404, detail="Work experience not found")
 
-    return jss
+    requester_role = _user["role"]
+    requester_id = _user["id"]
+
+    if requester_role == UserRole.JOB_SEEKER.value:
+        resume = await session.get(JobSeekerResume, jswe.job_seeker_resume_id)
+        if not resume or str(resume.user_id) != str(requester_id):
+            raise HTTPException(status_code=403, detail="Not allowed to access this resource")
+
+    return jswe
 
 
 @router.patch(
@@ -84,21 +169,48 @@ async def get_job_seeker_work_experience(
     response_model=RelationalJobSeekerWorkExperiencePublic,
 )
 async def patch_job_seeker_work_experience(
-        *,
-        session: AsyncSession = Depends(get_session),
-        job_seeker_work_experience_id: UUID,
-        job_seeker_work_experience_update: JobSeekerWorkExperienceUpdate,
+    *,
+    session: AsyncSession = Depends(get_session),
+    job_seeker_work_experience_id: UUID,
+    job_seeker_work_experience_update: JobSeekerWorkExperienceUpdate,
+    _user: dict = WRITE_ROLE_DEP,
 ):
+    """
+    Update a work experience.
+    - FULL_ADMIN / ADMIN: can update any fields for any record
+    - JOB_SEEKER: can update only their own experiences; cannot reassign to another resume
+    - EMPLOYER: cannot update (write excluded)
+    """
     jswe = await session.get(JobSeekerWorkExperience, job_seeker_work_experience_id)
     if not jswe:
-        raise HTTPException(status_code=404, detail="تجربه کاری کارجو پیدا نشد")
+        raise HTTPException(status_code=404, detail="Work experience not found")
+
+    requester_role = _user["role"]
+    requester_id = _user["id"]
+
+    if requester_role == UserRole.JOB_SEEKER.value:
+        resume = await session.get(JobSeekerResume, jswe.job_seeker_resume_id)
+        if not resume or str(resume.user_id) != str(requester_id):
+            raise HTTPException(status_code=403, detail="Not allowed to modify this resource")
 
     update_data = job_seeker_work_experience_update.model_dump(exclude_unset=True)
-    jswe.sqlmodel_update(update_data)
+
+    # Prevent JOB_SEEKER from changing ownership to another resume
+    if requester_role == UserRole.JOB_SEEKER.value and "job_seeker_resume_id" in update_data:
+        raise HTTPException(status_code=403, detail="You cannot change the resume_id of this experience")
+
+    # If ADMIN/FULL_ADMIN changed job_seeker_resume_id, validate target resume exists
+    if "job_seeker_resume_id" in update_data:
+        new_resume = await session.get(JobSeekerResume, update_data["job_seeker_resume_id"])
+        if not new_resume:
+            raise HTTPException(status_code=404, detail="Target resume not found")
+
+    # Apply updates
+    for field, value in update_data.items():
+        setattr(jswe, field, value)
 
     await session.commit()
     await session.refresh(jswe)
-
     return jswe
 
 
@@ -110,15 +222,29 @@ async def delete_job_seeker_work_experience(
     *,
     session: AsyncSession = Depends(get_session),
     job_seeker_work_experience_id: UUID,
+    _user: dict = WRITE_ROLE_DEP,
 ):
+    """
+    Delete a work experience.
+    - FULL_ADMIN / ADMIN: can delete any
+    - JOB_SEEKER: can delete only their own experiences
+    - EMPLOYER: cannot delete (write excluded)
+    """
     jswe = await session.get(JobSeekerWorkExperience, job_seeker_work_experience_id)
     if not jswe:
-        raise HTTPException(status_code=404, detail="تجربه کاری کارجو پیدا نشد")
+        raise HTTPException(status_code=404, detail="Work experience not found")
+
+    requester_role = _user["role"]
+    requester_id = _user["id"]
+
+    if requester_role == UserRole.JOB_SEEKER.value:
+        resume = await session.get(JobSeekerResume, jswe.job_seeker_resume_id)
+        if not resume or str(resume.user_id) != str(requester_id):
+            raise HTTPException(status_code=403, detail="Not allowed to delete this resource")
 
     await session.delete(jswe)
     await session.commit()
-
-    return {"msg": "تجربه کاری کارجو با موفقیت حذف شد"}
+    return {"msg": "Work experience deleted successfully"}
 
 
 @router.get(
@@ -126,22 +252,35 @@ async def delete_job_seeker_work_experience(
     response_model=list[RelationalJobSeekerWorkExperiencePublic],
 )
 async def search_job_seeker_work_experiences(
-        *,
-        session: AsyncSession = Depends(get_session),
-        title: str | None = None,
-        company_name: str | None = None,
-        start_date: str | None = None,
-        end_date: str | None = None,
-        job_seeker_resume_id: UUID | None = None,
-        operator: LogicalOperator,
-        offset: int = Query(default=0, ge=0),
-        limit: int = Query(default=100, le=100),
+    *,
+    session: AsyncSession = Depends(get_session),
+    title: str | None = None,
+    company_name: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    job_seeker_resume_id: UUID | None = None,
+    operator: LogicalOperator = Query(
+        default=LogicalOperator.AND,
+        description="Logical operator to combine filters: AND | OR | NOT",
+    ),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, le=100),
+    _user: dict = READ_ROLE_DEP,
 ):
+    """
+    Search experiences:
+    - FULL_ADMIN / ADMIN: search across all experiences
+    - EMPLOYER: read-only, can search across all experiences
+    - JOB_SEEKER: search within their own experiences only
+    """
+    requester_role = _user["role"]
+    requester_id = _user["id"]
+
     conditions = []
     if title:
         conditions.append(JobSeekerWorkExperience.title.ilike(f"%{title}%"))
     if company_name:
-        conditions.append(JobSeekerWorkExperience.company_name.ilike(f"%{title}%"))
+        conditions.append(JobSeekerWorkExperience.company_name.ilike(f"%{company_name}%"))
     if start_date:
         conditions.append(JobSeekerWorkExperience.start_date == start_date)
     if end_date:
@@ -150,20 +289,35 @@ async def search_job_seeker_work_experiences(
         conditions.append(JobSeekerWorkExperience.job_seeker_resume_id == job_seeker_resume_id)
 
     if not conditions:
-        raise HTTPException(status_code=400, detail="هیچ مقداری برای جست و جو وجود ندارد")
+        raise HTTPException(status_code=400, detail="No search filters provided")
 
+    # Combine conditions according to operator
     if operator == LogicalOperator.AND:
-        query = select(JobSeekerWorkExperience).where(and_(*conditions))
+        where_clause = and_(*conditions)
     elif operator == LogicalOperator.OR:
-        query = select(JobSeekerWorkExperience).where(or_(*conditions))
+        where_clause = or_(*conditions)
     elif operator == LogicalOperator.NOT:
-        query = select(JobSeekerWorkExperience).where(not_(and_(*conditions)))
+        where_clause = not_(or_(*conditions))
     else:
-        raise HTTPException(status_code=400, detail="عملگر نامعتبر مشخص شده است")
+        raise HTTPException(status_code=400, detail="Invalid logical operator")
 
-    result = await session.exec(query.offset(offset).limit(limit))
-    jswe = result.all()
-    if not jswe:
-        raise HTTPException(status_code=404, detail="تجربه کاری کارجو پیدا نشد")
+    # Apply role-based visibility
+    if requester_role == UserRole.JOB_SEEKER.value:
+        resumes_stmt = select(JobSeekerResume.id).where(JobSeekerResume.user_id == requester_id)
+        resume_ids = (await session.exec(resumes_stmt)).all()
+        if not resume_ids:
+            return []
+        final_where = and_(where_clause, JobSeekerWorkExperience.job_seeker_resume_id.in_(resume_ids))
+    else:
+        # ADMIN / FULL_ADMIN / EMPLOYER: no extra restriction
+        final_where = where_clause
 
-    return jswe
+    stmt = (
+        select(JobSeekerWorkExperience)
+        .where(final_where)
+        .order_by(JobSeekerWorkExperience.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    result = await session.exec(stmt)
+    return result.all()

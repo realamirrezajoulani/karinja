@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from schemas.saved_job import SavedJobCreate, SavedJobUpdate
 from utilities.enumerables import LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -42,6 +43,7 @@ async def get_saved_jobs(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = COMMON_ROLE_DEPENDENCY,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Return saved jobs:
@@ -83,6 +85,7 @@ async def create_saved_job(
     session: AsyncSession = Depends(get_session),
     saved_job_create: SavedJobCreate,
     _user: dict = COMMON_ROLE_DEPENDENCY,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create a saved job:
@@ -136,6 +139,7 @@ async def get_saved_job(
     session: AsyncSession = Depends(get_session),
     saved_job_id: UUID,
     _user: dict = COMMON_ROLE_DEPENDENCY,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single saved job:
@@ -166,6 +170,7 @@ async def patch_saved_job(
     saved_job_id: UUID,
     saved_job_update: SavedJobUpdate,
     _user: dict = COMMON_ROLE_DEPENDENCY,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update a saved job:
@@ -206,6 +211,7 @@ async def delete_saved_job(
     session: AsyncSession = Depends(get_session),
     saved_job_id: UUID,
     _user: dict = COMMON_ROLE_DEPENDENCY,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete a saved job:
@@ -243,6 +249,7 @@ async def search_saved_jobs(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = COMMON_ROLE_DEPENDENCY,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search saved jobs:

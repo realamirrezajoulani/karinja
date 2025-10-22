@@ -11,6 +11,7 @@ from schemas.relational_schemas import RelationalJobSeekerEducationPublic
 from sqlmodel import and_, not_, or_, select
 
 from utilities.enumerables import JobSeekerEducationDegree, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -46,6 +47,7 @@ async def get_job_seeker_educations(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     List educations.
@@ -91,6 +93,7 @@ async def create_job_seeker_education(
     session: AsyncSession = Depends(get_session),
     job_seeker_education_create: JobSeekerEducationCreate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create education.
@@ -158,6 +161,7 @@ async def get_job_seeker_education(
     session: AsyncSession = Depends(get_session),
     job_seeker_education_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single education.
@@ -189,6 +193,7 @@ async def patch_job_seeker_education(
     job_seeker_education_id: UUID,
     job_seeker_education_update: JobSeekerEducationUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update an education record.
@@ -242,6 +247,7 @@ async def delete_job_seeker_education(
     session: AsyncSession = Depends(get_session),
     job_seeker_education_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete an education record.
@@ -286,6 +292,7 @@ async def search_job_seeker_educations(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search educations:

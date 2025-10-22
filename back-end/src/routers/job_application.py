@@ -11,6 +11,7 @@ from sqlmodel import and_, not_, or_, select
 
 from schemas.job_application import JobApplicationCreate, JobApplicationUpdate
 from utilities.enumerables import JobApplicationStatus, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -56,6 +57,7 @@ async def get_job_applications(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     list job applications with role-based visibility:
@@ -119,6 +121,7 @@ async def create_job_application(
     session: AsyncSession = Depends(get_session),
     job_application_create: JobApplicationCreate,
     _user: dict = Depends(require_roles(UserRole.FULL_ADMIN.value, UserRole.ADMIN.value, UserRole.JOB_SEEKER.value)),
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create a job application:
@@ -182,6 +185,7 @@ async def get_job_application(
     session: AsyncSession = Depends(get_session),
     job_application_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve single application with role-based access:
@@ -228,6 +232,7 @@ async def patch_job_application(
     job_application_id: UUID,
     job_application_update: JobApplicationUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update an application:
@@ -311,6 +316,7 @@ async def delete_job_application(
     session: AsyncSession = Depends(get_session),
     job_application_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete an application:
@@ -357,6 +363,7 @@ async def search_job_applications(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search applications with role-based visibility:

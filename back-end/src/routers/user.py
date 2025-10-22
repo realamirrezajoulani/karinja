@@ -131,86 +131,6 @@ async def create_user(
         )
 
 
-# @router.get(
-#     "/users/",
-#     response_model=list[RelationalUserPublic],
-# )
-# async def get_users(
-#     *,
-#     session: AsyncSession = Depends(get_session),
-#     offset: int = Query(default=0, ge=0),
-#     limit: int = Query(default=100, le=100),
-#     _user: dict = Depends(
-#         require_roles(
-#             UserRole.FULL_ADMIN.value,
-#             UserRole.ADMIN.value,
-#         )
-#     ),
-#     _: str = Depends(oauth2_scheme),
-# ):
-#     users_query = select(User).offset(offset).limit(limit).order_by(User.created_at)
-
-#     if _user["role"] != UserRole.FULL_ADMIN.value:
-#         users_query.where(User.role != UserRole.FULL_ADMIN.value and User.role != UserRole.ADMIN.value)
-
-#     users = await session.exec(users_query)
-#     return users.all()
-
-
-# @router.post(
-#     "/users/",
-#     response_model=RelationalUserPublic,
-# )
-# async def create_user(
-#         *,
-#         session: AsyncSession = Depends(get_session),
-#         user_create: UserCreate,
-#         _user: dict = Depends(
-#             require_roles(
-#                 UserRole.FULL_ADMIN.value,
-#                 UserRole.ADMIN.value,
-#         )
-#     ),
-# ):
-#     if _user["role"] == UserRole.ADMIN.value and user_create.role == UserRole.FULL_ADMIN.value:
-#         raise HTTPException(
-#             status_code=403,
-#             detail="بیا 👍"
-#         )
-    
-#     hashed_password = get_password_hash(user_create.password)
-
-#     try:
-#         db_user = User(
-#             full_name=user_create.username,
-#             email=user_create.email,
-#             phone=user_create.phone,
-#             username=user_create.username,
-#             role=user_create.role,
-#             account_status=user_create.account_status,
-#             password=hashed_password,
-#         )
-
-#         session.add(db_user)
-#         await session.commit()
-#         await session.refresh(db_user)
-
-#         return db_user
-
-#     except IntegrityError as e:
-#         await session.rollback()
-#         raise HTTPException(
-#             status_code=409,
-#             detail="نام کاربری یا پست الکترونیکی یا شماره تلفن قبلا ثبت شده است"
-#         )
-#     except Exception as e:
-#         await session.rollback()
-#         raise HTTPException(
-#             status_code=500,
-#             detail=f"{e}خطا در ایجاد کاربر: "
-#         )
-
-
 @router.get(
     "/users/{user_id}",
     response_model=RelationalUserPublic,
@@ -416,6 +336,7 @@ async def search_users(
         operator: LogicalOperator,
         offset: int = Query(default=0, ge=0),
         limit: int = Query(default=100, le=100),
+        _: str = Depends(oauth2_scheme),
 ):
     # Get requester's role and id
     requester_role = _user["role"]

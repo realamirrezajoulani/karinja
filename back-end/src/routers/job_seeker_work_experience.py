@@ -11,6 +11,7 @@ from schemas.relational_schemas import RelationalJobSeekerWorkExperiencePublic
 from sqlmodel import and_, not_, or_, select
 
 from utilities.enumerables import LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -45,6 +46,7 @@ async def get_job_seeker_work_experiences(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     List work experiences.
@@ -90,6 +92,7 @@ async def create_job_seeker_work_experience(
     session: AsyncSession = Depends(get_session),
     job_seeker_work_experience_create: JobSeekerWorkExperienceCreate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create a work experience.
@@ -143,6 +146,7 @@ async def get_job_seeker_work_experience(
     session: AsyncSession = Depends(get_session),
     job_seeker_work_experience_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single work experience.
@@ -174,6 +178,7 @@ async def patch_job_seeker_work_experience(
     job_seeker_work_experience_id: UUID,
     job_seeker_work_experience_update: JobSeekerWorkExperienceUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update a work experience.
@@ -223,6 +228,7 @@ async def delete_job_seeker_work_experience(
     session: AsyncSession = Depends(get_session),
     job_seeker_work_experience_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete a work experience.
@@ -266,6 +272,7 @@ async def search_job_seeker_work_experiences(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search experiences:

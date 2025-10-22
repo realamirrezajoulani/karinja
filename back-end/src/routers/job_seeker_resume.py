@@ -12,6 +12,7 @@ from sqlmodel import and_, not_, or_, select
 from schemas.job_seeker_resume import JobSeekerResumeCreate, JobSeekerResumeUpdate
 from utilities.authentication import get_password_hash
 from utilities.enumerables import EmploymentStatusJobSeekerResume, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -46,6 +47,7 @@ async def get_job_seeker_resumes(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     List job seeker resumes.
@@ -87,6 +89,7 @@ async def create_job_seeker_resume(
     session: AsyncSession = Depends(get_session),
     job_seeker_resume_create: JobSeekerResumeCreate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create a resume.
@@ -145,6 +148,7 @@ async def get_job_seeker_resume(
     session: AsyncSession = Depends(get_session),
     job_seeker_resume_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single resume.
@@ -174,6 +178,7 @@ async def patch_job_seeker_resume(
     job_seeker_resume_id: UUID,
     job_seeker_resume_update: JobSeekerResumeUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update a resume.
@@ -225,6 +230,7 @@ async def delete_job_seeker_resume(
     session: AsyncSession = Depends(get_session),
     job_seeker_resume_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete a resume.
@@ -266,6 +272,7 @@ async def search_job_seeker_resumes(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search resumes:

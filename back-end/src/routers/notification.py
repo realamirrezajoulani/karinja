@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from schemas.notification import NotificationCreate, NotificationUpdate
 from utilities.enumerables import LogicalOperator, NotificationType, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -44,6 +45,7 @@ async def get_notifications(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = ALL_ROLES_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     List notifications with role-based visibility:
@@ -97,6 +99,7 @@ async def create_notification(
     session: AsyncSession = Depends(get_session),
     notification_create: NotificationCreate,
     _user: dict = Depends(require_roles(UserRole.FULL_ADMIN.value, UserRole.ADMIN.value)),
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create a notification:
@@ -145,6 +148,7 @@ async def get_notification(
     session: AsyncSession = Depends(get_session),
     notification_id: UUID,
     _user: dict = ALL_ROLES_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single notification:
@@ -190,6 +194,7 @@ async def patch_notification(
     notification_id: UUID,
     notification_update: NotificationUpdate,
     _user: dict = ALL_ROLES_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update a notification:
@@ -247,6 +252,7 @@ async def delete_notification(
     session: AsyncSession = Depends(get_session),
     notification_id: UUID,
     _user: dict = ALL_ROLES_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete a notification:
@@ -297,6 +303,7 @@ async def search_notifications(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = ALL_ROLES_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search notifications with role-based visibility:

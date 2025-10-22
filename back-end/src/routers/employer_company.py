@@ -11,7 +11,8 @@ from sqlmodel import and_, not_, or_, select
 from sqlalchemy.exc import IntegrityError
 
 from schemas.employer_company import CompanyCreate, CompanyUpdate
-from utilities.enumerables import EmployerCompanyEmployeeCount, EmployerCompanyIndustry, EmployerCompanyOwnershipType, LogicalOperator, UserAccountStatus, UserRole
+from utilities.enumerables import EmployerCompanyEmployeeCount, EmployerCompanyIndustry, EmployerCompanyOwnershipType, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -47,6 +48,7 @@ async def get_employer_companies(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     list companies.
@@ -73,6 +75,7 @@ async def create_employer_company(
     session: AsyncSession = Depends(get_session),
     company_create: CompanyCreate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create a company.
@@ -138,6 +141,7 @@ async def get_employer_company(
     session: AsyncSession = Depends(get_session),
     company_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single company.
@@ -159,6 +163,7 @@ async def patch_employer_company(
     company_id: UUID,
     company_update: CompanyUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update a company.
@@ -216,6 +221,7 @@ async def delete_employer_company(
     session: AsyncSession = Depends(get_session),
     company_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete a company.
@@ -262,6 +268,7 @@ async def search_employer_companies(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search companies.

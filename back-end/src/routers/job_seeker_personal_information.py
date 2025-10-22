@@ -10,8 +10,8 @@ from schemas.job_seeker_personal_information import JobSeekerPersonalInformation
 from schemas.relational_schemas import RelationalJobSeekerPersonalInformationPublic
 from sqlmodel import and_, not_, or_, select
 
-from utilities.authentication import get_password_hash
 from utilities.enumerables import IranProvinces, JobSeekerGender, JobSeekerMaritalStatus, JobSeekerMilitaryServiceStatus, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -47,6 +47,7 @@ async def get_job_seeker_personal_informations(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     List personal informations.
@@ -92,6 +93,7 @@ async def create_job_seeker_personal_information(
     session: AsyncSession = Depends(get_session),
     job_seeker_personal_information_create: JobSeekerPersonalInformationCreate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create personal information.
@@ -158,6 +160,7 @@ async def get_job_seeker_personal_information(
     session: AsyncSession = Depends(get_session),
     job_seeker_personal_information_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single personal information record.
@@ -189,6 +192,7 @@ async def patch_job_seeker_personal_information(
     job_seeker_personal_information_id: UUID,
     job_seeker_personal_information_update: JobSeekerPersonalInformationUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update personal information.
@@ -244,6 +248,7 @@ async def delete_job_seeker_personal_information(
     session: AsyncSession = Depends(get_session),
     job_seeker_personal_information_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete personal information.
@@ -288,6 +293,7 @@ async def search_job_seeker_personal_informations(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search personal informations:

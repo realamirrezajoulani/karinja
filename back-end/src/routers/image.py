@@ -11,6 +11,7 @@ from sqlmodel import and_, not_, or_, select
 
 from schemas.image import ImageCreate, ImageUpdate
 from utilities.enumerables import ImageType, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -49,6 +50,7 @@ async def get_images(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     list images.
@@ -88,6 +90,7 @@ async def create_image(
     session: AsyncSession = Depends(get_session),
     image_create: ImageCreate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create an image record.
@@ -142,6 +145,7 @@ async def get_image(
     session: AsyncSession = Depends(get_session),
     image_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve single image:
@@ -174,6 +178,7 @@ async def patch_image(
     image_id: UUID,
     image_update: ImageUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update an image:
@@ -226,6 +231,7 @@ async def delete_image(
     session: AsyncSession = Depends(get_session),
     image_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete an image:
@@ -264,6 +270,7 @@ async def search_images(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search images.

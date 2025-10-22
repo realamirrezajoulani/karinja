@@ -10,6 +10,7 @@ from sqlmodel import and_, not_, or_, select
 
 from schemas.job_posting import JobPostingCreate, JobPostingUpdate
 from utilities.enumerables import IranProvinces, JobPostingEmploymentType, JobPostingJobCategory, JobPostingSalaryUnit, JobPostingStatus, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -45,6 +46,7 @@ async def get_job_postings(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     list job postings.
@@ -72,6 +74,7 @@ async def create_job_posting(
     session: AsyncSession = Depends(get_session),
     job_posting_create: JobPostingCreate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create job posting.
@@ -165,6 +168,7 @@ async def get_job_posting(
     session: AsyncSession = Depends(get_session),
     job_posting_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve single job posting (read allowed to all roles).
@@ -186,6 +190,7 @@ async def patch_job_posting(
     job_posting_id: UUID,
     job_posting_update: JobPostingUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update a job posting.
@@ -248,6 +253,7 @@ async def delete_job_posting(
     session: AsyncSession = Depends(get_session),
     job_posting_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete a job posting.
@@ -302,6 +308,7 @@ async def search_job_postings(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search job postings.

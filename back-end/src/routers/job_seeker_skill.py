@@ -11,6 +11,7 @@ from schemas.relational_schemas import RelationalJobSeekerSkillPublic
 from sqlmodel import and_, not_, or_, select
 
 from utilities.enumerables import JobSeekerCertificateVerificationStatus, JobSeekerProficiencyLevel, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -46,6 +47,7 @@ async def get_job_seeker_skills(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     List skills.
@@ -91,6 +93,7 @@ async def create_job_seeker_skill(
     session: AsyncSession = Depends(get_session),
     job_seeker_skill_create: JobSeekerSkillCreate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create a skill.
@@ -153,6 +156,7 @@ async def get_job_seeker_skill(
     session: AsyncSession = Depends(get_session),
     job_seeker_skill_id: UUID,
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single skill.
@@ -184,6 +188,7 @@ async def patch_job_seeker_skill(
     job_seeker_skill_id: UUID,
     job_seeker_skill_update: JobSeekerSkillUpdate,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update a skill.
@@ -239,6 +244,7 @@ async def delete_job_seeker_skill(
     session: AsyncSession = Depends(get_session),
     job_seeker_skill_id: UUID,
     _user: dict = WRITE_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete a skill.
@@ -284,6 +290,7 @@ async def search_job_seeker_skills(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = READ_ROLE_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search skills:

@@ -11,6 +11,7 @@ from sqlmodel import and_, not_, or_, select
 
 from schemas.activity_log import ActivityLogCreate, ActivityLogUpdate
 from utilities.enumerables import ActivityLogType, LogicalOperator, UserRole
+from utilities.authentication import oauth2_scheme
 
 
 router = APIRouter()
@@ -35,6 +36,7 @@ async def get_activity_logs(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = ADMIN_OR_FULL_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     list activity logs with role-based visibility:
@@ -83,6 +85,7 @@ async def create_activity_log(
     session: AsyncSession = Depends(get_session),
     activity_log_create: ActivityLogCreate,
     _user: dict = ADMIN_OR_FULL_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create an activity log:
@@ -135,6 +138,7 @@ async def get_activity_log(
     session: AsyncSession = Depends(get_session),
     activity_log_id: UUID,
     _user: dict = ADMIN_OR_FULL_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve single activity log:
@@ -178,6 +182,7 @@ async def patch_activity_log(
     activity_log_id: UUID,
     activity_log_update: ActivityLogUpdate,
     _user: dict = ADMIN_OR_FULL_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Update an activity log:
@@ -240,6 +245,7 @@ async def delete_activity_log(
     session: AsyncSession = Depends(get_session),
     activity_log_id: UUID,
     _user: dict = ADMIN_OR_FULL_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Delete an activity log:
@@ -292,6 +298,7 @@ async def search_activity_logs(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     _user: dict = ADMIN_OR_FULL_DEP,
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Search activity logs:

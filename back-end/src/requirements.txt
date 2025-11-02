@@ -23,4 +23,5 @@ starlette==0.48.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.38.0
+jwcrypto==1.5.6
 uvloop==0.22.1

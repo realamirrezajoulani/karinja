@@ -5,13 +5,13 @@ from orjson import loads, dumps
 from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from jwcrypto import jwk, jwt as jwc_jwt
+# from jwcrypto import jwk, jwt as jwc_jwt
 
 from models.relational_models import User
 from schemas.relational_schemas import RelationalUserPublic
 from schemas.user import UserCreate
 from utilities.authentication import get_password_hash, refresh_header_scheme
-from dependencies import get_session
+from dependencies import _verify_cnf_simple, get_session
 from utilities.authentication import authenticate_user, create_access_token, decode_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
 from utilities.enumerables import UserRole
 
@@ -108,81 +108,53 @@ async def login(*,
     }
 
 
+# ------------------------------------------------------------------
+# Refresh token endpoint (simplified, single header-based check)
+# ------------------------------------------------------------------
+
+# NOTE: The router decorator is given here as an example. In your project
+# the router may already exist and the endpoint should be placed accordingly.
+
 @router.post("/refresh-token/")
 async def refresh_token(
     request: Request,
     refresh_header: str | None = Depends(refresh_header_scheme)
 ):
+    """
+    Refresh access and refresh tokens.
 
+    Behavior:
+      - Accepts the refresh token either in the custom refresh header or in
+        the standard Authorization header (Bearer).
+      - If the token's payload contains `cnf.jwk`, the client must send the
+        same JWK in X-Client-JWK header (simple equality check).
+      - Generates new access and refresh JWTs (calls create_access_token which
+        should be implemented elsewhere).
+    """
     token = None
     if refresh_header:
-        token = refresh_header.removeprefix("Bearer ").strip()
+        token = refresh_header.removeprefix("Bearer").strip()
 
     if not token:
         header_auth = request.headers.get("Authorization")
         if header_auth:
-            token = header_auth.removeprefix("Bearer ").strip()
+            token = header_auth.removeprefix("Bearer").strip()
 
     if not token:
-        raise HTTPException(status_code=401, detail="توکن refresh یا access یافت نشد (هدر/کوکی/کوئری).")
+        raise HTTPException(status_code=401, detail="No refresh or access token found (header/cookie/query).")
 
-    dpop = request.headers.get("DPoP") or request.query_params.get("dpop")
-
+    # DPoP removed — use simple cnf header verification if necessary
     payload = decode_access_token(token, verify_exp=True)
 
     token_type = payload.get("token_type")
     if token_type not in ("access", "refresh"):
-        raise HTTPException(status_code=401, detail="نوع توکن پشتیبانی نمی‌شود")
+        raise HTTPException(status_code=401, detail="Unsupported token type")
 
-    if token_type == "refresh":
-        cnf = payload.get("cnf")
-        if cnf and "jwk" in cnf:
-            if not dpop:
-                raise HTTPException(status_code=401, detail="DPoP proof لازم است (برای توکن refresh با cnf).")
-            client_jwk_json = cnf["jwk"]
-            try:
-                jwk_obj = jwk.JWK.from_json(dumps(client_jwk_json))
-                dpop_jwt = jwc_jwt.JWT(jwt=dpop, key=jwk_obj)
-                dpop_claims = loads(dpop_jwt.claims)
-
-                htu = dpop_claims.get("htu")
-                htm = dpop_claims.get("htm")
-                if not htu or not htm:
-                    raise HTTPException(status_code=401, detail="DPoP proof نامعتبر است")
-                if htm.upper() != request.method.upper():
-                    raise HTTPException(status_code=401, detail="DPoP proof با متد ناسازگار است")
-
-            except HTTPException:
-                raise
-            except Exception:
-                raise HTTPException(status_code=401, detail="DPoP proof امضا/فرمت نامعتبر است")
-
-
-    elif token_type == "access":
-
-        cnf = payload.get("cnf")
-        if cnf and "jwk" in cnf:
-            if not dpop:
-                raise HTTPException(status_code=401, detail="DPoP proof لازم است (برای access token دارای cnf).")
-            client_jwk_json = cnf["jwk"]
-            try:
-                jwk_obj = jwk.JWK.from_json(dumps(client_jwk_json))
-                dpop_jwt = jwc_jwt.JWT(jwt=dpop, key=jwk_obj)
-                dpop_claims = loads(dpop_jwt.claims)
-
-                htu = dpop_claims.get("htu")
-                htm = dpop_claims.get("htm")
-                if not htu or not htm:
-                    raise HTTPException(status_code=401, detail="DPoP proof نامعتبر است")
-                if htm.upper() != request.method.upper():
-                    raise HTTPException(status_code=401, detail="DPoP proof با متد ناسازگار است")
-            except HTTPException:
-                raise
-            except Exception:
-                raise HTTPException(status_code=401, detail="DPoP proof امضا/فرمت نامعتبر است")
-
-    else:
-        raise HTTPException(status_code=401, detail="نوع توکن پشتیبانی نمی‌شود")
+    # If cnf.jwk present, enforce header equality check
+    cnf = payload.get("cnf")
+    if cnf and "jwk" in cnf:
+        client_jwk_json = cnf["jwk"]
+        _verify_cnf_simple(request, client_jwk_json)
 
     user_id = payload.get("sub")
     user_role = payload.get("role")

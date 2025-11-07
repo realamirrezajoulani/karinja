@@ -10,121 +10,235 @@ from utilities.authentication import decode_access_token
 from jwcrypto import jwk, jwt as jwc_jwt
 
 
-def _validate_dpop_proof(request: Request, cnf_jwk: Dict[str, Any]) -> None:
+# ------------------------------------------------------------------
+# Helper: extract client JWK from a simple header (hex-encoded JSON)
+# ------------------------------------------------------------------
+
+def _client_jwk_from_header(request: Request) -> dict | None:
     """
-    Validate a DPoP proof JWT carried in header "DPoP" against the client's public JWK
-    supplied inside token 'cnf.jwk'. This is a basic set of checks:
-      - signature verification using the provided JWK
-      - presence of htm, htu, iat, jti claims
-      - http method match (htm)
-      - htu endswith request.path (basic path-check)
-      - iat close to now (e.g. within ±300s)
-    Raises HTTPException(401) on any failure.
+    Read the client JWK from the `X-Client-JWK` header.
+
+    The header is expected to contain the JSON representation of the
+    JWK encoded as hex (this preserves compatibility with the original
+    implementation). If the header is missing, return None.
+
+    If the header is present but malformed, raise HTTPException(400).
+
+    Returns:
+        dict | None: parsed JWK dict or None when header is missing.
     """
-    dpop = request.headers.get("DPoP")
-    if not dpop:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof required")
-
-    # load JWK (expect dict-like)
+    client_jwk_b64 = request.headers.get("X-Client-JWK")
+    if not client_jwk_b64:
+        return None
     try:
-        jwk_json = dumps(cnf_jwk)
-        jwk_obj = jwk.JWK.from_json(jwk_json)
+        client_jwk_json = loads(bytes.fromhex(client_jwk_b64).decode())
+        return client_jwk_json
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="کلید مشتری نامعتبر است")
-
-    # verify signature & parse claims
-    try:
-        # jwcrypto.jwt.JWT will verify signature
-        dpop_jwt = jwc_jwt.JWT(jwt=dpop, key=jwk_obj)
-        dpop_claims = loads(dpop_jwt.claims)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof امضا/فرمت نامعتبر است")
-
-    # required claims
-    htm = dpop_claims.get("htm")
-    htu = dpop_claims.get("htu")
-    iat = dpop_claims.get("iat")
-    jti = dpop_claims.get("jti")
-
-    if not (htm and htu and iat and jti):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof ناقص است")
-
-    # method must match
-    if htm.upper() != request.method.upper():
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof با متد درخواست همخوانی ندارد")
-
-    # basic htu check: ensure path matches (allowing full URL or path)
-    # e.g. client may set htu to origin+path or just path; we do a suffix check for robustness
-    req_path = request.url.path
-    if not htu.endswith(req_path):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof با مسیر درخواست همخوانی ندارد")
-
-    # iat time window (prevent replay with old proofs) -- permit small clock skew
-    try:
-        iat_ts = int(iat)
-    except Exception:
-        # sometimes iat might be float/string; try convert
-        try:
-            iat_ts = int(float(iat))
-        except Exception:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof iat نامعتبر است")
-
-    now_ts = int(datetime.now(timezone.utc).timestamp())
-    max_skew = 300  # seconds
-    if abs(now_ts - iat_ts) > max_skew:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof منقضی یا دارای اختلاف زمانی است")
-
-    # jti present (can be logged/monitored for anomalies)
-    # NOTE: since you are stateless, we cannot store jti server-side to enforce single-use.
-    return
+        raise HTTPException(status_code=400, detail="Invalid JWK format in X-Client-JWK header")
 
 
-# ----- Dependency: get_current_user -----
+# ------------------------------------------------------------------
+# Helper: simple verification of cnf.jwk against header-provided JWK
+# ------------------------------------------------------------------
+
+def _verify_cnf_simple(request: Request, cnf_jwk: Dict[str, Any]) -> None:
+    """
+    Simple verification for a token-bound client key (cnf.jwk).
+
+    This function enforces a very small and easy-to-understand rule:
+    if the access/refresh token contains `cnf.jwk`, then the client must
+    send the exact same JWK in the `X-Client-JWK` header. If the header is
+    missing or does not match, a 401 is raised.
+
+    NOTE: This is intentionally simple and does NOT prove possession of
+    the private key. It only checks that the client provides the same
+    JWK object that the token binds to. Do NOT consider this a secure
+    replacement for PoP/DPoP or mTLS in production.
+    """
+    header_jwk = _client_jwk_from_header(request)
+    if header_jwk is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Client JWK required in X-Client-JWK header.")
+
+    # simple dict equality check; if you prefer a thumbprint or another
+    # normalization step, replace this comparison accordingly
+    if header_jwk != cnf_jwk:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Provided JWK does not match cnf.jwk in token.")
+
+
+# ------------------------------------------------------------------
+# Dependency: get_current_user (simplified, cnf uses header check)
+# ------------------------------------------------------------------
+
 async def get_current_user(request: Request) -> Dict[str, Any]:
     """
-    Extract and validate access token from Authorization header.
-    Returns the token payload as a dict (must include 'sub' and 'role').
-    If payload contains 'cnf' with a 'jwk', validates the DPoP proof in header "DPoP".
+    Extract and validate the access token from the Authorization header.
+
+    - Decodes the JWT with `decode_access_token` (function assumed present
+      elsewhere in your codebase) which raises HTTPException on invalid/expired tokens.
+    - Ensures token_type == 'access'.
+    - Ensures required claims (sub/id and role) exist.
+    - If the token contains `cnf.jwk`, enforce that the client sent the
+      same JWK in the X-Client-JWK header (simple equality check).
+
+    Returns a dictionary describing the current user (id, role, and other
+    non-duplicate claims).
     """
     auth_header = request.headers.get("Authorization")
     if not auth_header:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="احراز هویت نشده است")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
     token = auth_header.removeprefix("Bearer").strip()
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="توکن ارسال‌شده معتبر نیست")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No token provided")
 
-    # decode_access_token should raise HTTPException on invalid/expired token.
+    # decode_access_token should be defined elsewhere and raise HTTPException on problems
     try:
         payload = decode_access_token(token)
     except HTTPException:
-        raise  # passthrough (already appropriate status/detail)
+        raise
     except Exception:
-        # fallback: do not reveal internal errors
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="احراز هویت ناموفق بود")
+        # hide internal errors from clients
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication failed")
 
-    # minimal required claims
     token_type = payload.get("token_type")
     if token_type != "access":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="توکن ارسالی توکن دسترسی نیست")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Provided token is not an access token")
 
-    user_id = payload.get("sub") or payload.get("id")  # support either claim name
+    user_id = payload.get("sub") or payload.get("id")
     role = payload.get("role")
     if not user_id or not role:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ادعاهای توکن ناقص است")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token claims are incomplete")
 
-    # If token is bound to client key -> enforce DPoP proof
+    # If the token is bound to a client key (cnf.jwk) -> verify via header
     cnf = payload.get("cnf")
     if cnf:
         jwk_in_cnf = cnf.get("jwk") if isinstance(cnf, dict) else None
         if not jwk_in_cnf:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="توکن دارای cnf نامعتبر است")
-        _validate_dpop_proof(request, jwk_in_cnf)
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has invalid cnf claim")
+        _verify_cnf_simple(request, jwk_in_cnf)
 
-    # you may want to return a lighter object (e.g. {"id": user_id, "role": role})
-    # to avoid exposing full token claims to downstream handlers.
-    return {"id": user_id, "role": role, **{k: v for k, v in payload.items() if k not in ("id","sub","role")}}
-    # note: we keep full payload except duplicate id/sub/role but primary keys returned explicitly
+    # Return a minimal user dict; avoid exposing raw token fields named id/sub/role
+    return {"id": user_id, "role": role, **{k: v for k, v in payload.items() if k not in ("id", "sub", "role")}}
+
+# def _validate_dpop_proof(request: Request, cnf_jwk: Dict[str, Any]) -> None:
+#     """
+#     Validate a DPoP proof JWT carried in header "DPoP" against the client's public JWK
+#     supplied inside token 'cnf.jwk'. This is a basic set of checks:
+#       - signature verification using the provided JWK
+#       - presence of htm, htu, iat, jti claims
+#       - http method match (htm)
+#       - htu endswith request.path (basic path-check)
+#       - iat close to now (e.g. within ±300s)
+#     Raises HTTPException(401) on any failure.
+#     """
+#     dpop = request.headers.get("DPoP")
+#     if not dpop:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof required")
+
+#     # load JWK (expect dict-like)
+#     try:
+#         jwk_json = dumps(cnf_jwk)
+#         jwk_obj = jwk.JWK.from_json(jwk_json)
+#     except Exception:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="کلید مشتری نامعتبر است")
+
+#     # verify signature & parse claims
+#     try:
+#         # jwcrypto.jwt.JWT will verify signature
+#         dpop_jwt = jwc_jwt.JWT(jwt=dpop, key=jwk_obj)
+#         dpop_claims = loads(dpop_jwt.claims)
+#     except Exception:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof امضا/فرمت نامعتبر است")
+
+#     # required claims
+#     htm = dpop_claims.get("htm")
+#     htu = dpop_claims.get("htu")
+#     iat = dpop_claims.get("iat")
+#     jti = dpop_claims.get("jti")
+
+#     if not (htm and htu and iat and jti):
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof ناقص است")
+
+#     # method must match
+#     if htm.upper() != request.method.upper():
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof با متد درخواست همخوانی ندارد")
+
+#     # basic htu check: ensure path matches (allowing full URL or path)
+#     # e.g. client may set htu to origin+path or just path; we do a suffix check for robustness
+#     req_path = request.url.path
+#     if not htu.endswith(req_path):
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof با مسیر درخواست همخوانی ندارد")
+
+#     # iat time window (prevent replay with old proofs) -- permit small clock skew
+#     try:
+#         iat_ts = int(iat)
+#     except Exception:
+#         # sometimes iat might be float/string; try convert
+#         try:
+#             iat_ts = int(float(iat))
+#         except Exception:
+#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof iat نامعتبر است")
+
+#     now_ts = int(datetime.now(timezone.utc).timestamp())
+#     max_skew = 300  # seconds
+#     if abs(now_ts - iat_ts) > max_skew:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="DPoP proof منقضی یا دارای اختلاف زمانی است")
+
+#     # jti present (can be logged/monitored for anomalies)
+#     # NOTE: since you are stateless, we cannot store jti server-side to enforce single-use.
+#     return
+
+
+# # ----- Dependency: get_current_user -----
+# async def get_current_user(request: Request) -> Dict[str, Any]:
+#     """
+#     Extract and validate access token from Authorization header.
+#     Returns the token payload as a dict (must include 'sub' and 'role').
+#     If payload contains 'cnf' with a 'jwk', validates the DPoP proof in header "DPoP".
+#     """
+#     auth_header = request.headers.get("Authorization")
+#     if not auth_header:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="احراز هویت نشده است")
+
+#     token = auth_header.removeprefix("Bearer").strip()
+#     if not token:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="توکن ارسال‌شده معتبر نیست")
+
+#     # decode_access_token should raise HTTPException on invalid/expired token.
+#     try:
+#         payload = decode_access_token(token)
+#     except HTTPException:
+#         raise  # passthrough (already appropriate status/detail)
+#     except Exception:
+#         # fallback: do not reveal internal errors
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="احراز هویت ناموفق بود")
+
+#     # minimal required claims
+#     token_type = payload.get("token_type")
+#     if token_type != "access":
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="توکن ارسالی توکن دسترسی نیست")
+
+#     user_id = payload.get("sub") or payload.get("id")  # support either claim name
+#     role = payload.get("role")
+#     if not user_id or not role:
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ادعاهای توکن ناقص است")
+
+#     # If token is bound to client key -> enforce DPoP proof
+#     cnf = payload.get("cnf")
+#     if cnf:
+#         jwk_in_cnf = cnf.get("jwk") if isinstance(cnf, dict) else None
+#         if not jwk_in_cnf:
+#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="توکن دارای cnf نامعتبر است")
+#         _validate_dpop_proof(request, jwk_in_cnf)
+
+#     # you may want to return a lighter object (e.g. {"id": user_id, "role": role})
+#     # to avoid exposing full token claims to downstream handlers.
+#     return {"id": user_id, "role": role, **{k: v for k, v in payload.items() if k not in ("id","sub","role")}}
+#     # note: we keep full payload except duplicate id/sub/role but primary keys returned explicitly
 
 
 # ----- Dependency factory: require_roles -----

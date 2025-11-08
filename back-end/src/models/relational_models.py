@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4, UUID
 
 from sqlmodel import Column, DateTime, Field, Relationship, func

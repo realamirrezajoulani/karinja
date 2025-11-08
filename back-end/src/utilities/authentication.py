@@ -12,7 +12,7 @@ from sqlmodel import select
 from schemas.authentication import LoginRequest
 from models.relational_models import User
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 15  # Access token lifetime (15 minutes)
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # Access token lifetime (15 minutes)
 REFRESH_TOKEN_EXPIRE_MINUTES = 10080  # Refresh token lifetime (7 days)
 
 SECRET_KEY = os.getenv("P2_SECURITY_KEY")

@@ -86,6 +86,8 @@ async def login(*,
 
     user_id = str(user["user_id"])
     role = user["user_role"]
+    full_name = user["user_full_name"]
+    status = user["user_account_status"]
 
     access_payload = {"sub": user_id, "role": role, "token_type": "access", "jti": "access-" + user_id + "-" + str(int(datetime.now(timezone.utc).timestamp()))}
     refresh_payload = {"sub": user_id, "role": role, "token_type": "refresh", "jti": "refresh-" + user_id + "-" + str(int(datetime.now(timezone.utc).timestamp()))}
@@ -99,7 +101,9 @@ async def login(*,
 
     return {
         "user_id": user_id,
-        "role": role,
+        "user_role": role,
+        "user_full_name": full_name,
+        "user_status": status,
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",

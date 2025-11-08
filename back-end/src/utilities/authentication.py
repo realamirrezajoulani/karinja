@@ -126,4 +126,4 @@ async def authenticate_user(credentials: LoginRequest, session: AsyncSession):
             detail="نام کاربری یا گذرواژه پیدا نشد"
         )
     
-    return {"user_id": user.id, "user_role": user.role.value}
+    return {"user_id": user.id, "user_role": user.role.value, "user_full_name": user.full_name, "user_account_status": user.account_status.value}

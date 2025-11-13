@@ -45,8 +45,8 @@ async def get_job_postings(
     session: AsyncSession = Depends(get_session),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
-    _user: dict = READ_ROLE_DEP,
-    _: str = Depends(oauth2_scheme),
+    # _user: dict = READ_ROLE_DEP,
+    # _: str = Depends(oauth2_scheme),
 ):
     """
     list job postings.
@@ -167,8 +167,8 @@ async def get_job_posting(
     *,
     session: AsyncSession = Depends(get_session),
     job_posting_id: UUID,
-    _user: dict = READ_ROLE_DEP,
-    _: str = Depends(oauth2_scheme),
+    # _user: dict = READ_ROLE_DEP,
+    # _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve single job posting (read allowed to all roles).

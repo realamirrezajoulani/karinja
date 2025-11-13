@@ -47,8 +47,8 @@ async def get_employer_companies(
     session: AsyncSession = Depends(get_session),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
-    _user: dict = READ_ROLE_DEP,
-    _: str = Depends(oauth2_scheme),
+    # _user: dict = READ_ROLE_DEP,
+    # _: str = Depends(oauth2_scheme),
 ):
     """
     list companies.
@@ -140,8 +140,8 @@ async def get_employer_company(
     *,
     session: AsyncSession = Depends(get_session),
     company_id: UUID,
-    _user: dict = READ_ROLE_DEP,
-    _: str = Depends(oauth2_scheme),
+    # _user: dict = READ_ROLE_DEP,
+    # _: str = Depends(oauth2_scheme),
 ):
     """
     Retrieve a single company.

@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from sqlalchemy.orm import selectinload
 from dependencies import get_session, require_roles
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -10,7 +11,6 @@ from schemas.relational_schemas import RelationalJobSeekerResumePublic
 from sqlmodel import and_, not_, or_, select
 
 from schemas.job_seeker_resume import JobSeekerResumeCreate, JobSeekerResumeUpdate
-from utilities.authentication import get_password_hash
 from utilities.enumerables import EmploymentStatusJobSeekerResume, LogicalOperator, UserRole
 from utilities.authentication import oauth2_scheme
 
@@ -233,24 +233,101 @@ async def delete_job_seeker_resume(
     _: str = Depends(oauth2_scheme),
 ):
     """
-    Delete a resume.
+    Delete a resume and all related entities (except the user).
+
     - FULL_ADMIN / ADMIN: can delete any resume
     - JOB_SEEKER: can delete only their own resumes
-    - EMPLOYER: cannot delete (write excluded)
+    - EMPLOYER: NOT allowed to delete resumes
     """
-    jsr = await session.get(JobSeekerResume, job_seeker_resume_id)
+    # fetch resume with its relationships to delete children safely
+    stmt = (
+        select(JobSeekerResume)
+        .where(JobSeekerResume.id == job_seeker_resume_id)
+        .options(
+            selectinload(JobSeekerResume.job_seeker_personal_information),
+            selectinload(JobSeekerResume.job_seeker_skills),
+            selectinload(JobSeekerResume.job_seeker_work_experiences),
+            selectinload(JobSeekerResume.job_seeker_educations),
+            selectinload(JobSeekerResume.job_applications),
+        )
+    )
+    result = await session.exec(stmt)
+    jsr = result.one_or_none()
+
     if not jsr:
         raise HTTPException(status_code=404, detail="Job seeker resume not found")
 
     requester_role = _user["role"]
     requester_id = _user["id"]
 
+    # Employer is not allowed to delete resumes
+    if requester_role == UserRole.EMPLOYER.value:
+        raise HTTPException(status_code=403, detail="Employers are not allowed to delete resumes")
+
+    # Job seeker may delete only their own resume
     if requester_role == UserRole.JOB_SEEKER.value and str(jsr.user_id) != str(requester_id):
         raise HTTPException(status_code=403, detail="Not allowed to delete this resume")
 
-    await session.delete(jsr)
-    await session.commit()
-    return {"msg": "Job seeker resume deleted successfully"}
+    # At this point: either admin/full_admin, or job_seeker owner — proceed to delete related objects
+    try:
+        # Delete one-to-one personal information if exists
+        if getattr(jsr, "job_seeker_personal_information", None):
+            await session.delete(jsr.job_seeker_personal_information)
+
+        # Delete lists of related items (skills, experiences, educations, job applications)
+        for skill in getattr(jsr, "job_seeker_skills", []) or []:
+            await session.delete(skill)
+
+        for exp in getattr(jsr, "job_seeker_work_experiences", []) or []:
+            await session.delete(exp)
+
+        for edu in getattr(jsr, "job_seeker_educations", []) or []:
+            await session.delete(edu)
+
+        for app in getattr(jsr, "job_applications", []) or []:
+            await session.delete(app)
+
+        # finally delete the resume itself
+        await session.delete(jsr)
+
+        # commit transaction
+        await session.commit()
+        return {"msg": "Job seeker resume deleted successfully"}
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting resume and related data: {e}")
+
+# @router.delete(
+#     "/job_seeker_resumes/{job_seeker_resume_id}",
+#     response_model=dict[str, str],
+# )
+# async def delete_job_seeker_resume(
+#     *,
+#     session: AsyncSession = Depends(get_session),
+#     job_seeker_resume_id: UUID,
+#     _user: dict = WRITE_ROLE_DEP,
+#     _: str = Depends(oauth2_scheme),
+# ):
+#     """
+#     Delete a resume.
+#     - FULL_ADMIN / ADMIN: can delete any resume
+#     - JOB_SEEKER: can delete only their own resumes
+#     - EMPLOYER: cannot delete (write excluded)
+#     """
+#     jsr = await session.get(JobSeekerResume, job_seeker_resume_id)
+#     if not jsr:
+#         raise HTTPException(status_code=404, detail="Job seeker resume not found")
+
+#     requester_role = _user["role"]
+#     requester_id = _user["id"]
+
+#     if requester_role == UserRole.JOB_SEEKER.value and str(jsr.user_id) != str(requester_id):
+#         raise HTTPException(status_code=403, detail="Not allowed to delete this resume")
+
+#     await session.delete(jsr)
+#     await session.commit()
+#     return {"msg": "Job seeker resume deleted successfully"}
 
 
 @router.get(

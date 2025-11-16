@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from database import lifespan
 from routers import api_status, job_seeker_personal_information, job_seeker_resume, user, job_seeker_education, job_seeker_skill, job_seeker_work_experience, employer_company, authentication, activity_log, job_application, saved_job, image, notification, job_posting
@@ -45,7 +46,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS", "HEAD", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "accept", "Authorization", "Authorization-Refresh", "X-Client-JWK", "DPoP"],
 )
-
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):

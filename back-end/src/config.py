@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from database import lifespan
-from routers import api_status, job_seeker_personal_information, job_seeker_resume, user, job_seeker_education, job_seeker_skill, job_seeker_work_experience, employer_company, authentication, activity_log, job_application, saved_job, image, notification, job_posting, stats
+from routers import api_status, job_seeker_personal_information, job_seeker_resume, user, job_seeker_education, job_seeker_skill, job_seeker_work_experience, employer_company, authentication, activity_log, job_application, saved_job, image, notification, job_posting, stats, ticket, blog, comment, setting
 
 
 
@@ -74,3 +74,8 @@ app.include_router(saved_job.router, tags=["Saved Job"])
 app.include_router(image.router, tags=["Image"])
 app.include_router(notification.router, tags=["Notification"])
 app.include_router(job_posting.router, tags=["Job Posting"])
+
+app.include_router(comment.router, tags=["Comment"])
+app.include_router(blog.router, tags=["Blog"])
+app.include_router(ticket.router, tags=["Ticket"])
+app.include_router(setting.router, tags=["Setting"])

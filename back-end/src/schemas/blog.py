@@ -1,5 +1,6 @@
+from uuid import UUID
 from datetime import datetime
-from sqlmodel import UUID, Column, Field, SQLModel, Text
+from sqlmodel import Column, Field, SQLModel, Text
 
 from schemas.base.blog import BlogBase
 from utilities.enumerables import BlogStatus

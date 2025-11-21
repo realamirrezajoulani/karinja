@@ -1,5 +1,4 @@
-from uuid import uuid4
-from sqlmodel import UUID, Column, Field, SQLModel, Text
+from sqlmodel import Column, Field, SQLModel, Text
 
 
 class CommentBase(SQLModel):

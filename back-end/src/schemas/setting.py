@@ -1,5 +1,6 @@
+from uuid import UUID
 from datetime import datetime
-from sqlmodel import UUID, Field, SQLModel
+from sqlmodel import Field, SQLModel
 
 from schemas.base.setting import SettingBase
 from utilities.enumerables import SettingType

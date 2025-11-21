@@ -1,4 +1,3 @@
-# Source file (for reference): /mnt/data/New Text Document.txt
 from uuid import UUID
 from typing import List
 

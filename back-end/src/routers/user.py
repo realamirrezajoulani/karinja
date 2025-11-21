@@ -67,27 +67,27 @@ async def create_user(
     *,
     session: AsyncSession = Depends(get_session),
     user_create: UserCreate,
-    # _user: dict = Depends(
-    #     require_roles(
-    #         UserRole.FULL_ADMIN.value,
-    #         UserRole.ADMIN.value,
-    #     )
-    # ),
-    # _: str = Depends(oauth2_scheme),
+    _user: dict = Depends(
+        require_roles(
+            UserRole.FULL_ADMIN.value,
+            UserRole.ADMIN.value,
+        )
+    ),
+    _: str = Depends(oauth2_scheme),
 ):
     """
     Create a new user.
     - FULL_ADMIN: may create any role (including FULL_ADMIN)
     - ADMIN: may create any role except FULL_ADMIN (403 if attempt)
     """
-    # requester_role = _user["role"]
+    requester_role = _user["role"]
 
-    # # Reject attempts by ADMIN to create FULL_ADMIN
-    # if requester_role == UserRole.ADMIN.value and user_create.role == UserRole.FULL_ADMIN.value:
-    #     raise HTTPException(
-    #         status_code=403,
-    #         detail="Admins cannot create full_admin users"
-    #     )
+    # Reject attempts by ADMIN to create FULL_ADMIN
+    if requester_role == UserRole.ADMIN.value and user_create.role == UserRole.FULL_ADMIN.value:
+        raise HTTPException(
+            status_code=403,
+            detail="Admins cannot create full_admin users"
+        )
 
     # Basic validation: password must be provided
     if not user_create.password or not user_create.password.strip():

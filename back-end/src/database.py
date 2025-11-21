@@ -22,7 +22,7 @@ async def create_tables():
     Ensures that all defined models are reflected in the database.
     """
     async with async_engine.begin() as connection:
-        await connection.run_sync(SQLModel.metadata.create_all)
+        await connection.run_sync(SQLModel.metadata.drop_all)
 
 
 # Async context manager to handle lifespan of the application

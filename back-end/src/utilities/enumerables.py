@@ -294,3 +294,36 @@ class ActivityLogType(str, Enum):
     SIGNUP = "ثبت نام"
 
     OTHER = "سایر"
+
+
+class BlogStatus(str, Enum):
+    DRAFT = "پیش نویس"
+    PUBLISHED = "منتشر شده"
+    ARCHIVED = "آرشیو شده"
+
+
+class TicketStatus(str, Enum):
+    OPEN = "باز"
+    IN_PROGRESS = "در حال بررسی"
+    RESOLVED = "بررسی شد"
+    CLOSED = "بسته شد"
+
+
+class TicketPriority(str, Enum):
+    LOW = "کم"
+    MEDIUM = "متوسط"
+    HIGH = "بالا"
+
+
+class TicketType(str, Enum):
+    QUESTION = "سوال"
+    INCIDENT = "اختلال/باگ"
+    FEATURE_REQUEST = "درخواست قابلیت جدید"
+    COMPLAINT = "شکایت"
+    OTHER = "سایر"
+
+
+class SettingType(str, Enum):
+    STRING = "string"
+    INTEGER = "integer"
+    BOOLEAN = "boolean"

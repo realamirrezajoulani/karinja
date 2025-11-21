@@ -1,4 +1,6 @@
 from schemas.activity_log import ActivityLogPublic
+from schemas.blog import BlogPublic
+from schemas.comment import CommentPublic
 from schemas.employer_company import CompanyPublic
 from schemas.image import ImagePublic
 from schemas.job_application import JobApplicationPublic
@@ -10,6 +12,8 @@ from schemas.job_seeker_skill import JobSeekerSkillPublic
 from schemas.job_seeker_work_experience import JobSeekerWorkExperiencePublic
 from schemas.notification import NotificationPublic
 from schemas.saved_job import SavedJobPublic
+from schemas.setting import SettingPublic
+from schemas.ticket import TicketPublic
 from schemas.user import UserPublic
 
 
@@ -20,6 +24,10 @@ class RelationalUserPublic(UserPublic):
     notifications: list[NotificationPublic] = []
     saved_jobs: list[SavedJobPublic] = []
     activity_logs: list[ActivityLogPublic] = []
+    blogs: list[BlogPublic] = []
+    writed_comments: list[CommentPublic] = []
+    tickets: list[TicketPublic] = []
+    settings: list[SettingPublic] = []
 
 
 class RelationalJobSeekerPersonalInformationPublic(JobSeekerPersonalInformationPublic):
@@ -77,4 +85,18 @@ class RelationalSavedJobPublic(SavedJobPublic):
 
 
 class RelationalActivityLogPublic(ActivityLogPublic):
+    user: UserPublic
+
+class RelationalBlogPublic(BlogPublic):
+    user: UserPublic
+    comments: list[CommentPublic] = []
+
+class RelationalCommentPublic(CommentPublic):
+    blog: BlogPublic
+    user: UserPublic
+
+class RelationalTicketPublic(TicketPublic):
+    requester_user: UserPublic
+
+class RelationalSettingPublic(SettingPublic):
     user: UserPublic

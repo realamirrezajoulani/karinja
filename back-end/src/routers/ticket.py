@@ -99,7 +99,7 @@ async def create_ticket(
             subject=ticket_create.subject,
             description=getattr(ticket_create, "description", None),
             status=getattr(ticket_create, "status", TicketStatus.OPEN.value),
-            ticket_type=getattr(ticket_create, "ticket_type", TicketType.GENERAL.value),
+            ticket_type=getattr(ticket_create, "ticket_type", TicketType.QUESTION.value),
             priority=getattr(ticket_create, "priority", TicketPriority.MEDIUM.value),
             answer=getattr(ticket_create, "answer", None),
             image_url=getattr(ticket_create, "image_url", None),

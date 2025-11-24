@@ -23,5 +23,4 @@ class BlogUpdate(SQLModel):
     views_count: int | None = Field(default=None)
     likes_count: int | None = Field(default=None)
     comments_count: int | None = Field(default=None)
-
     published_at: str | None = Field(default=None, index=True)

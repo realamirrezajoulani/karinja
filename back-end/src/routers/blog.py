@@ -27,16 +27,16 @@ async def get_blogs(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
     # Require any authenticated role that can list blogs.
-    _user: dict = Depends(
-        require_roles(
-            UserRole.FULL_ADMIN.value,
-            UserRole.ADMIN.value,
-            UserRole.EMPLOYER.value,
-            UserRole.JOB_SEEKER.value,
-        )
-    ),
-    # Ensure the caller is authenticated (token required)
-    _: str = Depends(oauth2_scheme),
+    # _user: dict = Depends(
+    #     require_roles(
+    #         UserRole.FULL_ADMIN.value,
+    #         UserRole.ADMIN.value,
+    #         UserRole.EMPLOYER.value,
+    #         UserRole.JOB_SEEKER.value,
+    #     )
+    # ),
+    # # Ensure the caller is authenticated (token required)
+    # _: str = Depends(oauth2_scheme),
 ):
     """
     List blogs with role-based visibility:
@@ -44,21 +44,21 @@ async def get_blogs(
     - ADMIN: sees all blogs.
     - EMPLOYER / JOB_SEEKER: sees only PUBLISHED blogs.
     """
-    requester_role = _user["role"]
+    # requester_role = _user["role"]
 
     # Base query ordered by newest first
     query = select(Blog).order_by(Blog.created_at.desc())
 
     # Apply visibility rules
-    if requester_role == UserRole.FULL_ADMIN.value:
-        pass  # full access
-    elif requester_role == UserRole.ADMIN.value:
-        pass  # admin sees all blogs
-    elif requester_role in (UserRole.EMPLOYER.value, UserRole.JOB_SEEKER.value):
-        # non-admins only see published posts
-        query = query.where(Blog.status == BlogStatus.PUBLISHED.value)
-    else:
-        raise HTTPException(status_code=403, detail="Invalid role")
+    # if requester_role == UserRole.FULL_ADMIN.value:
+    #     pass  # full access
+    # elif requester_role == UserRole.ADMIN.value:
+    #     pass  # admin sees all blogs
+    # elif requester_role in (UserRole.EMPLOYER.value, UserRole.JOB_SEEKER.value):
+    #     # non-admins only see published posts
+    #     query = query.where(Blog.status == BlogStatus.PUBLISHED.value)
+    # else:
+    #     raise HTTPException(status_code=403, detail="Invalid role")
 
     query = query.offset(offset).limit(limit)
     result = await session.exec(query)
@@ -92,17 +92,21 @@ async def create_blog(
     requester_id = _user["id"]
 
     # Admins may set any status; default to DRAFT if not provided.
-    incoming_status = getattr(blog_create, "status", None)
-    status_to_set = incoming_status or BlogStatus.DRAFT.value
+    if requester_role == UserRole.ADMIN.value and requester_id != blog_create.user_id:
+        raise HTTPException(status_code=403, detail="You can not create blog with other's id")
+
+
 
     try:
         db_blog = Blog(
             title=blog_create.title,
             content=blog_create.content,
-            excerpt=getattr(blog_create, "excerpt", None),
-            status=status_to_set,
-            author_user_id=requester_id,
-            published_at=getattr(blog_create, "published_at", None),
+            status=blog_create.status,
+            views_count=blog_create.views_count,
+            likes_count=blog_create.likes_count,
+            comments_count=blog_create.comments_count,
+            published_at=blog_create.published_at,
+            user_id=blog_create.user_id,
         )
         session.add(db_blog)
         await session.commit()

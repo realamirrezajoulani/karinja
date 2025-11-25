@@ -10,7 +10,7 @@ from dependencies import get_session, require_roles
 from utilities.authentication import oauth2_scheme
 from utilities.enumerables import LogicalOperator, BlogStatus, UserRole
 
-from models.relational_models import Blog
+from models.relational_models import Blog, Comment
 from schemas.relational_schemas import RelationalBlogPublic
 from schemas.blog import BlogCreate, BlogUpdate
 
@@ -196,7 +196,7 @@ async def patch_blog(
 
     requester_role = _user["role"]
     requester_id_str = str(_user["id"])
-    author_id_str = str(target_blog.author_user_id)
+    author_id_str = str(target_blog.user_id)
 
     # Permission enforcement:
     if requester_role == UserRole.FULL_ADMIN.value:
@@ -214,7 +214,7 @@ async def patch_blog(
 
     # Optional: prevent admins from changing certain critical fields (example)
     # If you want admins restricted from changing 'author_user_id' or similar, enforce here.
-    if "author_user_id" in update_data:
+    if "user_id" in update_data:
         # Prevent changing the author unless FULL_ADMIN
         if requester_role != UserRole.FULL_ADMIN.value:
             raise HTTPException(status_code=403, detail="Only FULL_ADMIN can change the author")
@@ -258,7 +258,7 @@ async def delete_blog(
 
     requester_role = _user["role"]
     requester_id_str = str(_user["id"])
-    author_id_str = str(target_blog.author_user_id)
+    author_id_str = str(target_blog.user_id)
 
     if requester_role == UserRole.FULL_ADMIN.value:
         pass  # full permission
@@ -267,9 +267,22 @@ async def delete_blog(
             raise HTTPException(status_code=403, detail="Admin can only delete blogs they authored")
     else:
         raise HTTPException(status_code=403, detail="Invalid role")
+    
+    try:
+        # Option 1: delete comments explicitly (safe)
+        comments_res = await session.exec(select(Comment).where(Comment.blog_id == blog_id))
+        comments = comments_res.all()
+        for c in comments:
+            await session.delete(c)   # note: no await
 
-    await session.delete(target_blog)
-    await session.commit()
+        # delete the blog instance
+        await session.delete(target_blog)   # note: no await
+
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+
     return {"msg": "Blog successfully deleted"}
 
 
@@ -312,7 +325,7 @@ async def search_blogs(
     if content:
         conditions.append(Blog.content.ilike(f"%{content}%"))
     if author_id:
-        conditions.append(Blog.author_user_id == author_id)
+        conditions.append(Blog.user_id == author_id)
     if status:
         conditions.append(Blog.status == status.value)
 

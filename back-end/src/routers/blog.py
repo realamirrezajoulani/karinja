@@ -130,31 +130,26 @@ async def get_blog(
     *,
     session: AsyncSession = Depends(get_session),
     blog_id: UUID,
-    _user: dict = Depends(
-        require_roles(
-            UserRole.FULL_ADMIN.value,
-            UserRole.ADMIN.value,
-            UserRole.EMPLOYER.value,
-            UserRole.JOB_SEEKER.value,
-        )
-    ),
-    _: str = Depends(oauth2_scheme),
+    # _user: dict = Depends(
+    #     require_roles(
+    #         UserRole.FULL_ADMIN.value,
+    #         UserRole.ADMIN.value,
+    #         UserRole.EMPLOYER.value,
+    #         UserRole.JOB_SEEKER.value,
+    #     )
+    # ),
+    # _: str = Depends(oauth2_scheme),
 ):
-    """
-    Retrieve a single blog post with role-based visibility:
-    - FULL_ADMIN / ADMIN: can view any blog.
-    - EMPLOYER / JOB_SEEKER: can view only PUBLISHED blogs.
-    """
-    requester_role = _user["role"]
+    # requester_role = _user["role"]
 
     query = select(Blog).where(Blog.id == blog_id)
 
-    if requester_role in (UserRole.FULL_ADMIN.value, UserRole.ADMIN.value):
-        pass  # full access
-    elif requester_role in (UserRole.EMPLOYER.value, UserRole.JOB_SEEKER.value):
-        query = query.where(Blog.status == BlogStatus.PUBLISHED.value)
-    else:
-        raise HTTPException(status_code=403, detail="Invalid role")
+    # if requester_role in (UserRole.FULL_ADMIN.value, UserRole.ADMIN.value):
+    #     pass  # full access
+    # elif requester_role in (UserRole.EMPLOYER.value, UserRole.JOB_SEEKER.value):
+    #     query = query.where(Blog.status == BlogStatus.PUBLISHED.value)
+    # else:
+    #     raise HTTPException(status_code=403, detail="Invalid role")
 
     result = await session.exec(query)
     blog = result.one_or_none()
@@ -297,26 +292,20 @@ async def search_blogs(
     content: str | None = None,
     author_id: UUID | None = None,
     status: BlogStatus | None = None,
-    _user: dict = Depends(
-        require_roles(
-            UserRole.FULL_ADMIN.value,
-            UserRole.ADMIN.value,
-            UserRole.EMPLOYER.value,
-            UserRole.JOB_SEEKER.value,
-        )
-    ),
+    # _user: dict = Depends(
+    #     require_roles(
+    #         UserRole.FULL_ADMIN.value,
+    #         UserRole.ADMIN.value,
+    #         UserRole.EMPLOYER.value,
+    #         UserRole.JOB_SEEKER.value,
+    #     )
+    # ),
     operator: LogicalOperator = Query(...),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, le=100),
-    _: str = Depends(oauth2_scheme),
+    # _: str = Depends(oauth2_scheme),
 ):
-    """
-    Search blogs using a logical operator (AND / OR / NOT).
-    - FULL_ADMIN: search across all blogs.
-    - ADMIN: search across all blogs.
-    - EMPLOYER / JOB_SEEKER: results limited to PUBLISHED blogs only.
-    """
-    requester_role = _user["role"]
+    # requester_role = _user["role"]
 
     # Build search conditions from provided params
     conditions = []
@@ -343,14 +332,14 @@ async def search_blogs(
         raise HTTPException(status_code=400, detail="Invalid logical operator")
 
     # Apply role-based restrictions on top of search criteria
-    if requester_role in (UserRole.FULL_ADMIN.value, UserRole.ADMIN.value):
-        final_where = where_clause
-    elif requester_role in (UserRole.EMPLOYER.value, UserRole.JOB_SEEKER.value):
-        final_where = and_(where_clause, Blog.status == BlogStatus.PUBLISHED.value)
-    else:
-        raise HTTPException(status_code=403, detail="Invalid role")
+    # if requester_role in (UserRole.FULL_ADMIN.value, UserRole.ADMIN.value):
+    #     final_where = where_clause
+    # elif requester_role in (UserRole.EMPLOYER.value, UserRole.JOB_SEEKER.value):
+    #     final_where = and_(where_clause, Blog.status == BlogStatus.PUBLISHED.value)
+    # else:
+    #     raise HTTPException(status_code=403, detail="Invalid role")
 
-    query = select(Blog).where(final_where).offset(offset).limit(limit)
+    query = select(Blog).where(where_clause).offset(offset).limit(limit)
     result = await session.exec(query)
     blogs = result.all()
     return blogs

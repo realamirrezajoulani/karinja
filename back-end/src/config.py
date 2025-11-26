@@ -3,7 +3,7 @@ from fastapi.responses import ORJSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from rsgiadapter import ASGIToRSGI
+# from rsgiadapter import ASGIToRSGI
 
 from database import lifespan
 from routers import api_status, job_seeker_personal_information, job_seeker_resume, user, job_seeker_education, job_seeker_skill, job_seeker_work_experience, employer_company, authentication, activity_log, job_application, saved_job, image, notification, job_posting, stats, ticket, blog, comment, setting
@@ -31,7 +31,7 @@ app = FastAPI(lifespan=lifespan,
 
 app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=4)
 
-rsgi_app = ASGIToRSGI(app)
+# rsgi_app = ASGIToRSGI(app)
 
 
 origins = [

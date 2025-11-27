@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 # from rsgiadapter import ASGIToRSGI
 
 from database import lifespan
-from routers import api_status, job_seeker_personal_information, job_seeker_resume, user, job_seeker_education, job_seeker_skill, job_seeker_work_experience, employer_company, authentication, activity_log, job_application, saved_job, image, notification, job_posting, stats, ticket, blog, comment, setting
+from routers import api_status, job_seeker_personal_information, job_seeker_resume, user, job_seeker_education, job_seeker_skill, job_seeker_work_experience, employer_company, authentication, activity_log, job_application, saved_job, image, notification, job_posting, stats, ticket, blog, comment, setting, get_me
 
 
 
@@ -83,3 +83,4 @@ app.include_router(comment.router, tags=["Comment"])
 app.include_router(blog.router, tags=["Blog"])
 app.include_router(ticket.router, tags=["Ticket"])
 app.include_router(setting.router, tags=["Setting"])
+app.include_router(get_me.router, tags=["Get Me"])

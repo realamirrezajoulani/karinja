@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from dependencies import get_session, require_roles
+from dependencies import get_current_user, get_session, require_roles
 from models.relational_models import User
 from schemas.relational_schemas import RelationalUserPublic
 from utilities.authentication import oauth2_scheme
@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.get(
     "/get_me/",
-    response_class=RelationalUserPublic
+    response_model=RelationalUserPublic
 )
 async def get_me(
     *,
@@ -28,6 +28,7 @@ async def get_me(
         )
     ),
     _: str = Depends(oauth2_scheme),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Return the currently authenticated user's details.
@@ -36,7 +37,7 @@ async def get_me(
     - Uses an async DB session (get_session) to fetch the full User record from the database.
     - No request body or query parameters are required; the request must be authenticated.
     """
-    user_id = session.get("id")
+    user_id = current_user.get("id")
 
     if user_id is None:
         # This should not normally happen because get_current_user enforces authentication,

@@ -17,7 +17,7 @@ class SettingCreate(SettingBase):
 
 
 class SettingUpdate(SQLModel):
-    key: str | None = Field(default=None, unique=True, max_length=128, index=True)
+    key: str | None = Field(default=None, max_length=128, index=True)
     value: str | None = Field(default=None)
     value_type: SettingType | None = Field(default=None, index=True)
     description: str | None = Field(default=None, max_length=512)
